@@ -1,7 +1,16 @@
 part of nearby_connections;
 
-typedef StateChangedCallback = Function(Device device);
-typedef MessageReceivedCallback = Function(Device device);
+typedef StateChangedCallback = Function(List<Device> devices);
+typedef MessageReceivedCallback = Function(Device devices);
+
+class StateChangedObserver extends ValueNotifier<List<Device>> {
+  StateChangedObserver() : super([]);
+}
+
+class MessageReceivedObserver extends ValueNotifier<Device> {
+  MessageReceivedObserver() : super(Device());
+}
+
 
 const _initNearbyService = 'init_nearby_service';
 const _startAdvertisingPeer = 'start_advertising_peer';
@@ -24,8 +33,12 @@ class NearbyService {
   static const MethodChannel _channel =
       const MethodChannel('nearby_connections');
 
-  List<StateChangedCallback> _stateChangedCallbacks = [];
-  List<MessageReceivedCallback> _messageReceivedCallbacks = [];
+  final _stateChangedCallbacks = <String,StateChangedCallback>{};
+
+  final _messageReceivedCallbacks = <String,MessageReceivedCallback>{};
+
+  StateChangedObserver _stateChangedObserver = StateChangedObserver();
+  MessageReceivedObserver _messageReceivedObserver = MessageReceivedObserver();
 
   NearbyService({@required String serviceType}) : assert (serviceType.length <= 15){
     _channel.invokeMethod(_initNearbyService, serviceType);
@@ -64,20 +77,20 @@ class NearbyService {
         "}");
   }
 
-  void stateChangedSubject(StateChangedCallback callback) {
-    _stateChangedCallbacks.add((device) => callback);
+  void stateChangedSubject({@required String tag,@required StateChangedCallback callback}) {
+    _stateChangedCallbacks[tag] = callback;
   }
 
-  void messageReceivedSubject(MessageReceivedCallback callback) {
-    _stateChangedCallbacks.add((device) => callback);
+  void messageReceivedSubject({@required String tag,@required MessageReceivedCallback callback}) {
+    _messageReceivedCallbacks[tag] = callback;
   }
 
-  void unSubjectMessageReceived(MessageReceivedCallback callback) {
-    _messageReceivedCallbacks.remove(callback);
+  void unSubjectStateChanged({@required String tag}) {
+    _stateChangedCallbacks.remove(tag);
   }
 
-  void unSubjectStateChanged(StateChangedCallback callback) {
-    _stateChangedCallbacks.remove(callback);
+  void unSubjectMessageReceived({@required String tag}) {
+    _messageReceivedCallbacks.remove(tag);
   }
 
   // ignore: missing_return
@@ -85,16 +98,24 @@ class NearbyService {
     _channel.setMethodCallHandler((call) {
       switch (call.method) {
         case _invokeChangeStateMethod:
-          _stateChangedCallbacks.forEach((element) {
-            element.call(Device());
-          });
+//          final json = jsonDecode(call.arguments as String) as List;
+//          List<Device> devies = json.map((m) => Device.fromJson(m));
+          List<Device> devices = jsonDecode(call.arguments).map<Device>((dynamic device) => Device.fromJson(device)).toList();
+          _stateChangedObserver.value = devices;
           break;
         case _invokeMessageReceiveMethod:
-          _messageReceivedCallbacks.forEach((element) {
-            element.call(Device());
-          });
+          _messageReceivedObserver.value = Device();
           break;
       }
+    });
+
+    _stateChangedObserver.addListener(() {
+      _stateChangedCallbacks.forEach((key, value) {
+        value(_stateChangedObserver.value);
+      });
+      _messageReceivedCallbacks.forEach((key, value) {
+        value(Device());
+      });
     });
   }
 }

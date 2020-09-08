@@ -18,9 +18,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     default:
       return MaterialPageRoute(
           builder: (_) => Scaffold(
-            body: Center(
-                child: Text('No route defined for ${settings.name}')),
-          ));
+                body: Center(
+                    child: Text('No route defined for ${settings.name}')),
+              ));
   }
 }
 
@@ -52,9 +52,9 @@ class Home extends StatelessWidget {
                 color: Colors.red,
                 child: Center(
                     child: Text(
-                      'POS',
-                      style: TextStyle(color: Colors.white, fontSize: 40),
-                    )),
+                  'POS',
+                  style: TextStyle(color: Colors.white, fontSize: 40),
+                )),
               ),
             ),
           ),
@@ -68,9 +68,9 @@ class Home extends StatelessWidget {
                 color: Colors.green,
                 child: Center(
                     child: Text(
-                      'CDS',
-                      style: TextStyle(color: Colors.white, fontSize: 40),
-                    )),
+                  'CDS',
+                  style: TextStyle(color: Colors.white, fontSize: 40),
+                )),
               ),
             ),
           ),
@@ -97,9 +97,14 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void initState() {
     super.initState();
 
-    nearbyService.stateChangedSubject((device) => {
-      devices.add(device)
-    });
+    nearbyService.stateChangedSubject(
+        tag: "_DevicesListScreenState",
+        callback: (device) {
+          setState(() {
+            devices.clear();
+            devices.addAll(device);
+          });
+        });
   }
 
   @override
@@ -128,7 +133,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             return ListTile(
               title: Text(device.displayName),
               subtitle: Text('State: $device.state'),
-
+              onTap: _onTabItemListener(device),
             );
           }),
     );
@@ -184,4 +189,57 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
           );
         });
   }
+
+  _onTabItemListener(Device device) {
+    switch(device.state) {
+      case SessionState.notConnected:
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Connect to this device?"),
+                actions: [
+                  FlatButton(
+                    child: Text("Connect"),
+                    onPressed: () {
+                      nearbyService.inviteDevice(deviceID: device.deviceID);
+                    },
+                  ),
+                  FlatButton(
+                    child: Text("Cancel"),
+                    onPressed: () {
+                      Navigator.of(context).maybePop();
+                    },
+                  )
+                ],
+              );
+            });
+        break;
+
+      case SessionState.connected:
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Send message"),
+                actions: [
+                  FlatButton(
+                    child: Text("Send"),
+                    onPressed: () {
+                      nearbyService.inviteDevice(deviceID: device.deviceID);
+                    },
+                  ),
+                  FlatButton(
+                    child: Text("Cancel"),
+                    onPressed: () {
+                      Navigator.of(context).pop();
+                    },
+                  )
+                ],
+              );
+            });
+        break;
+    }
+  }
+
 }
