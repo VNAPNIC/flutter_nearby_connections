@@ -1,16 +1,17 @@
 name: nearby_connections
-description: A new flutter plugin project.
+description: Flutter plugin support peer-to-peer connectivity and the discovery of nearby devices for Android vs IOS.
 version: 0.0.1
-author:
-homepage:
+author: vn.apnic@gmail.com
+homepage: https://github.com/VNAPNIC/flutter_nearby_connections
 
 environment:
   sdk: ">=2.7.0 <3.0.0"
-  flutter: ">=1.20.0 <2.0.0"
+  flutter: ">=1.10.0"
 
 dependencies:
   flutter:
     sdk: flutter
+  pedantic: ^1.9.0
 
 dev_dependencies:
   flutter_test:

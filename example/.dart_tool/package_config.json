@@ -86,6 +86,12 @@
       "languageVersion": "2.0"
     },
     {
+      "name": "pedantic",
+      "rootUri": "file:///Users/apple/Documents/flutter/.pub-cache/hosted/pub.dartlang.org/pedantic-1.9.0",
+      "packageUri": "lib/",
+      "languageVersion": "2.1"
+    },
+    {
       "name": "sky_engine",
       "rootUri": "file:///Users/apple/Documents/flutter/bin/cache/pkg/sky_engine",
       "packageUri": "lib/",
@@ -146,7 +152,7 @@
       "languageVersion": "2.7"
     }
   ],
-  "generated": "2020-09-08T06:50:37.754922Z",
+  "generated": "2020-09-08T07:11:13.106719Z",
   "generator": "pub",
   "generatorVersion": "2.9.1"
 }
