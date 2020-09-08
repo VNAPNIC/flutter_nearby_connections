@@ -1,0 +1,6 @@
+framework module nearby_connections {
+  umbrella header "nearby_connections-umbrella.h"
+
+  export *
+  module * { export * }
+}
