@@ -10,9 +10,11 @@ Route<dynamic> generateRoute(RouteSettings settings) {
     case '/':
       return MaterialPageRoute(builder: (_) => Home());
     case 'pos':
-      return MaterialPageRoute(builder: (_) => SecondRoute());
+      return MaterialPageRoute(
+          builder: (_) => DevicesListScreen(type: deviceType));
     case 'cds':
-      return MaterialPageRoute(builder: (_) => DevicesListScreen());
+      return MaterialPageRoute(
+          builder: (_) => DevicesListScreen(type: deviceType));
     default:
       return MaterialPageRoute(
           builder: (_) => Scaffold(
@@ -21,6 +23,9 @@ Route<dynamic> generateRoute(RouteSettings settings) {
           ));
   }
 }
+
+String deviceType;
+
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -39,7 +44,10 @@ class Home extends StatelessWidget {
         children: [
           Expanded(
             child: InkWell(
-              onTap: () {Navigator.pushNamed(context, 'pos');},
+              onTap: () {
+                Navigator.pushNamed(context, 'pos');
+                deviceType = "pos";
+              },
               child: Container(
                 color: Colors.red,
                 child: Center(
@@ -52,7 +60,10 @@ class Home extends StatelessWidget {
           ),
           Expanded(
             child: InkWell(
-              onTap: () {Navigator.pushNamed(context, 'cds');},
+              onTap: () {
+                Navigator.pushNamed(context, 'cds');
+                deviceType = "cds";
+              },
               child: Container(
                 color: Colors.green,
                 child: Center(
@@ -69,7 +80,6 @@ class Home extends StatelessWidget {
   }
 }
 
-
 class DevicesListScreen extends StatefulWidget {
   const DevicesListScreen({this.type});
 
@@ -80,22 +90,47 @@ class DevicesListScreen extends StatefulWidget {
 }
 
 class _DevicesListScreenState extends State<DevicesListScreen> {
-
   List<Device> devices = [];
-  final nearbyService = NearbyService(serviceType: 'connection');
+  final nearbyService = NearbyService(serviceType: 'mp-connection');
 
   @override
   void initState() {
     super.initState();
-    nearbyService.startAdvertisingPeer();
-    nearbyService.startBrowsingForPeers();
+
+    nearbyService.stateChangedSubject((device) => {
+      devices.add(device)
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.type.toUpperCase()),
+        actions: [
+          IconButton(
+            icon: Icon(Icons.settings_input_antenna),
+            onPressed: () {
+              if (deviceType == 'pos') {
+                _showPOSMenuDialog();
+              } else {
+                _showCDSMenuDialog();
+              }
+            },
+          )
+        ],
+      ),
       backgroundColor: Colors.white,
-      body: Container(),
+      body: ListView.builder(
+          itemCount: devices.length,
+          itemBuilder: (context, index) {
+            final device = devices[index];
+            return ListTile(
+              title: Text(device.displayName),
+              subtitle: Text('State: $device.state'),
+
+            );
+          }),
     );
   }
 
@@ -104,15 +139,49 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       color: Colors.grey,
     );
   }
-}
 
-class SecondRoute extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Text('Go back!'),
-      ),
-    );
+  _showPOSMenuDialog() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Connection menu"),
+            actions: [
+              FlatButton(
+                child: Text("Search CDS"),
+                onPressed: () {
+                  nearbyService.startBrowsingForPeers();
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          );
+        });
+  }
+
+  _showCDSMenuDialog() {
+    showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Connection menu"),
+            actions: [
+              FlatButton(
+                child: Text("Turn on connection mode"),
+                onPressed: () {
+                  nearbyService.startAdvertisingPeer();
+                  nearbyService.startBrowsingForPeers();
+                  Navigator.of(context).pop();
+                },
+              ),
+              FlatButton(
+                child: Text("Turn off connection mode"),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+              )
+            ],
+          );
+        });
   }
 }

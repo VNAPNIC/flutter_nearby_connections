@@ -21,7 +21,13 @@ class MPCManager: NSObject {
     
     var localPeerID: MCPeerID!
     var enterbackgroundNotification: NSObjectProtocol!
-    var devices: [Device] = []
+    var devices: [Device] = [] {
+        didSet {
+            deviceDidChange?()
+        }
+    }
+    
+    var deviceDidChange: (() -> Void)?
     
     override init() {
         if let data = UserDefaults.standard.data(forKey: "peerID"), let id = NSKeyedUnarchiver.unarchiveObject(with: data) as? MCPeerID {
@@ -141,6 +147,7 @@ extension MPCManager: MCNearbyServiceAdvertiserDelegate {
 extension MPCManager: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
         self.device(for: peerID)
+        
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
