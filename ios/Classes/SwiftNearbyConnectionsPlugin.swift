@@ -79,6 +79,11 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         NotificationCenter.default.addObserver(self, selector: #selector(stateChanged), name: MPCManager.Notifications.deviceDidChangeState, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(messageRecived), name: Device.messageReceivedNotification, object: nil)
+        
+        
+        MPCManager.instance.deviceDidChange = {[weak self] in
+            self?.stateChanged()
+        }
     }
     
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {

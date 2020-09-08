@@ -85,10 +85,14 @@ class NearbyService {
     _channel.setMethodCallHandler((call) {
       switch (call.method) {
         case _invokeChangeStateMethod:
-          _stateChangedCallbacks.forEach((element) { element.call(Device()); });
+          _stateChangedCallbacks.forEach((element) {
+            element.call(Device());
+          });
           break;
         case _invokeMessageReceiveMethod:
-          _messageReceivedCallbacks.forEach((element) { element.call(Device()); });
+          _messageReceivedCallbacks.forEach((element) {
+            element.call(Device());
+          });
           break;
       }
     });
