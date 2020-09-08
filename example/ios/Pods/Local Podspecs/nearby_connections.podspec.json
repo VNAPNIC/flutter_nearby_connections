@@ -17,6 +17,9 @@
   "dependencies": {
     "Flutter": [
 
+    ],
+    "SwiftyJSON": [
+      "~> 4.0"
     ]
   },
   "platforms": {

@@ -1,6 +1,7 @@
 import Flutter
 import UIKit
 import MultipeerConnectivity
+import SwiftyJSON
 
 let SERVICE_TYPE = "ioscreator-chat"
 let INVOKE_CHANGE_STATE_METHOD = "invoke_change_state_method"
@@ -62,13 +63,13 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     
     @objc func stateChanged(){
         let devices = MPCManager.instance.devices.compactMap({return DeviceJson(deviceID: $0.deviceId, displayName: $0.peerID.displayName, state: $0.state.rawValue)})
-        channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, arguments: devices.compactMap({return $0.toStringAnyObject()}))
+        channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
     }
     
     @objc func messageRecived() {
         let devices = MPCManager.instance.devices.compactMap({return MessageJson(deviceID: $0.deviceId, displayName: $0.peerID.displayName, state: $0.state.rawValue, message: $0.lastMessageReceived?.body ?? "")})
         
-        channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, arguments: devices.compactMap({return $0.toStringAnyObject()}).debugDescription)
+        channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
     }
     
     public init(channel:FlutterMethodChannel) {
