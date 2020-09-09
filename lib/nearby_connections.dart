@@ -5,7 +5,7 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
-import 'package:nearby_connections/src/data.dart';
+import 'package:nearby_connections/src/message.dart';
 
 part 'src/device.dart';
 part 'src/nearby_service.dart';
