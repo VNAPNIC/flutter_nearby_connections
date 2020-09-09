@@ -137,13 +137,62 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
           itemCount: devices.length,
           itemBuilder: (context, index) {
             final device = devices[index];
-            return ListTile(
-              title: Text(device.displayName),
-              subtitle: Text('State: $device.state'),
-              onTap: _onTabItemListener(device),
-            );
+            return InkWell(
+                onTap: () {
+                  _onTabItemListener(device);
+                },
+                child: Container(
+                  margin: EdgeInsets.all(8.0),
+                  child: Column(
+                    children: [
+                      Row(
+                        children: [
+                          Expanded(child: Text(device.displayName)),
+                          Container(
+                            margin: EdgeInsets.symmetric(horizontal: 8.0),
+                            padding: EdgeInsets.all(8.0),
+                            height: 35,
+                            width: 100,
+                            color: getStateColor(device.state),
+                            child: Center(
+                              child: Text(
+                                getStateName(device.state),
+                                style:
+                                TextStyle(color: Colors.white,fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                          )
+                        ],
+                      ),
+                      SizedBox(height: 8.0,),
+                      Divider(height: 1,color: Colors.grey,)
+                    ],
+                  ),
+                ));
           }),
     );
+  }
+
+  String getStateName(SessionState state) {
+    switch (state) {
+      case SessionState.notConnected:
+        return "invite";
+      case SessionState.connecting:
+        return "inviting";
+      case SessionState.connected:
+        return "invited";
+    }
+  }
+
+  Color getStateColor(SessionState state) {
+    switch (state) {
+      case SessionState.notConnected:
+        return Colors.green;
+      case SessionState.connecting:
+        return Colors.grey;
+      case SessionState.connected:
+        return Colors.indigoAccent;
+    }
   }
 
   _onTabItemListener(Device device) {
@@ -153,7 +202,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: Text("Connect to this device?"),
+                title: Text("Device not connected!"),
                 actions: [
                   FlatButton(
                     child: Text("Connect"),
@@ -171,7 +220,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               );
             });
         break;
-
       case SessionState.connected:
         showDialog(
             context: context,
@@ -189,6 +237,29 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                     child: Text("Cancel"),
                     onPressed: () {
                       Navigator.of(context).pop();
+                    },
+                  )
+                ],
+              );
+            });
+        break;
+      case SessionState.connecting:
+        showDialog(
+            context: context,
+            builder: (BuildContext context) {
+              return AlertDialog(
+                title: Text("Device not connected!"),
+                actions: [
+                  FlatButton(
+                    child: Text("Connect"),
+                    onPressed: () {
+                      nearbyService.inviteDevice(deviceID: device.deviceID);
+                    },
+                  ),
+                  FlatButton(
+                    child: Text("Cancel"),
+                    onPressed: () {
+                      Navigator.of(context).maybePop();
                     },
                   )
                 ],
