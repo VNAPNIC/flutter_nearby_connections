@@ -1,16 +1,27 @@
 part of nearby_connections;
 
-class Device{
+enum SessionState { notConnected, connecting, connected }
+
+class Device {
   String deviceID;
   String displayName;
   SessionState state = SessionState.notConnected;
-  String message;
 
-  Device();
+  Device(this.deviceID, this.displayName, int state) {
+    switch (state) {
+      case 1:
+        this.state = SessionState.connecting;
+        break;
+      case 2:
+        this.state = SessionState.connected;
+        break;
+      default:
+        this.state = SessionState.notConnected;
+        break;
+    }
+  }
 
-  factory Device.fromJson(json){
-   return Device()
-    ..deviceID = json["deviceID"]
-       ..displayName = json["displayName"];
- }
+  factory Device.fromJson(json) {
+    return Device(json["deviceID"], json["displayName"], json["state"]);
+  }
 }

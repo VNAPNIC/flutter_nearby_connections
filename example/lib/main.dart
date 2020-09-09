@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:nearby_connections/nearby_connections.dart';
 
@@ -92,19 +94,23 @@ class DevicesListScreen extends StatefulWidget {
 class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> devices = [];
   final nearbyService = NearbyService(serviceType: 'mp-connection');
+  StreamSubscription subscription;
 
   @override
   void initState() {
     super.initState();
+    subscription = nearbyService.stateChangedSubscription(callback: (device) {
+      setState(() {
+        devices.clear();
+        devices.addAll(device);
+      });
+    });
+  }
 
-    nearbyService.stateChangedSubject(
-        tag: "_DevicesListScreenState",
-        callback: (device) {
-          setState(() {
-            devices.clear();
-            devices.addAll(device);
-          });
-        });
+  @override
+  void dispose() {
+    subscription?.cancel();
+    super.dispose();
   }
 
   @override
@@ -114,12 +120,13 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         title: Text(widget.type.toUpperCase()),
         actions: [
           IconButton(
-            icon: Icon(Icons.settings_input_antenna),
+            icon: Icon(Icons.cast_connected),
             onPressed: () {
               if (deviceType == 'pos') {
-                _showPOSMenuDialog();
+                nearbyService.startBrowsingForPeers();
               } else {
-                _showCDSMenuDialog();
+                nearbyService.startAdvertisingPeer();
+                nearbyService.startBrowsingForPeers();
               }
             },
           )
@@ -139,59 +146,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     );
   }
 
-  Widget _item(Device device) {
-    return Container(
-      color: Colors.grey,
-    );
-  }
-
-  _showPOSMenuDialog() {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Connection menu"),
-            actions: [
-              FlatButton(
-                child: Text("Search CDS"),
-                onPressed: () {
-                  nearbyService.startBrowsingForPeers();
-                  Navigator.of(context).pop();
-                },
-              )
-            ],
-          );
-        });
-  }
-
-  _showCDSMenuDialog() {
-    showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Connection menu"),
-            actions: [
-              FlatButton(
-                child: Text("Turn on connection mode"),
-                onPressed: () {
-                  nearbyService.startAdvertisingPeer();
-                  nearbyService.startBrowsingForPeers();
-                  Navigator.of(context).pop();
-                },
-              ),
-              FlatButton(
-                child: Text("Turn off connection mode"),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              )
-            ],
-          );
-        });
-  }
-
   _onTabItemListener(Device device) {
-    switch(device.state) {
+    switch (device.state) {
       case SessionState.notConnected:
         showDialog(
             context: context,
@@ -241,5 +197,4 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         break;
     }
   }
-
 }

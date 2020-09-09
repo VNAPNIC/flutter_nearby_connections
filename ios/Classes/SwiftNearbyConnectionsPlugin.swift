@@ -45,17 +45,13 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         }
     }
     
-    struct MessageJson: Encodable {
+    struct MessageJson {
         var deviceID:String
-        var displayName:String
-        var state:Int
         var message:String
         
         func toStringAnyObject() -> [String: Any] {
             return [
                 "deviceID": deviceID,
-                "displayName": displayName,
-                "state": state,
                 "message": message
             ]
         }
@@ -66,9 +62,8 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
     }
     
-    @objc func messageRecived() {
-        let devices = MPCManager.instance.devices.compactMap({return MessageJson(deviceID: $0.deviceId, displayName: $0.peerID.displayName, state: $0.state.rawValue, message: $0.lastMessageReceived?.body ?? "")})
-        
+    @objc func messageReceived() {
+        let devices = MPCManager.instance.devices.compactMap({return MessageJson(deviceID: $0.deviceId, message: $0.lastMessageReceived?.body ?? "")})
         channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
     }
     
@@ -78,9 +73,8 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         
         NotificationCenter.default.addObserver(self, selector: #selector(stateChanged), name: MPCManager.Notifications.deviceDidChangeState, object: nil)
         
-        NotificationCenter.default.addObserver(self, selector: #selector(messageRecived), name: Device.messageReceivedNotification, object: nil)
-        
-        
+        NotificationCenter.default.addObserver(self, selector: #selector(messageReceived), name: Device.messageReceivedNotification, object: nil)
+
         MPCManager.instance.deviceDidChange = {[weak self] in
             self?.stateChanged()
         }
