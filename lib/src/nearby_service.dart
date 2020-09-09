@@ -75,8 +75,8 @@ class NearbyService {
     _channel.invokeMethod(
         _sendMessage,
         "{"
-        "\"deviceID\":\"deviceID\","
-        "\"message\":\"message\""
+        "\"deviceID\":\"$deviceID\","
+        "\"message\": \"$argument\""
         "}");
   }
 

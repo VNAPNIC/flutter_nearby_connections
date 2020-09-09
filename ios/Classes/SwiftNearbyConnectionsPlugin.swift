@@ -29,6 +29,8 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
     
+    var currentReceivedDevice: Device? = Device(peerID: MPCManager.instance.localPeerID)
+    
     let channel: FlutterMethodChannel
     
     struct DeviceJson {
@@ -62,9 +64,12 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
     }
     
-    @objc func messageReceived() {
-        let devices = MPCManager.instance.devices.compactMap({return MessageJson(deviceID: $0.deviceId, message: $0.lastMessageReceived?.body ?? "")})
-        channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
+    @objc func messageReceived(notification: Notification) {
+        if let formDevice = notification.userInfo?["from"] as? MCPeerID, let device = MPCManager.instance.devices.first(where: {return $0.peerID == formDevice}) {
+            let message = MessageJson(deviceID: device.deviceId, message: device.lastMessageReceived?.body ?? "")
+            channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD,
+                                 arguments: JSON(message.toStringAnyObject()).rawString())
+        }
     }
     
     public init(channel:FlutterMethodChannel) {
@@ -74,7 +79,7 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         NotificationCenter.default.addObserver(self, selector: #selector(stateChanged), name: MPCManager.Notifications.deviceDidChangeState, object: nil)
         
         NotificationCenter.default.addObserver(self, selector: #selector(messageReceived), name: Device.messageReceivedNotification, object: nil)
-
+        
         MPCManager.instance.deviceDidChange = {[weak self] in
             self?.stateChanged()
         }
@@ -110,8 +115,9 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
                 if let data = jsonData!.data(using: String.Encoding.utf8) {
                     do {
                         dictonary = try JSONSerialization.jsonObject(with: data, options: []) as? [String:AnyObject] as NSDictionary?
-                        if dictonary != nil{
-                            try MPCManager.instance.device(for: dictonary?["deviceID"] as! String)?.send(text: dictonary?["message"] as! String)
+                        if dictonary != nil, let device = MPCManager.instance.device(for: dictonary?["deviceID"] as? String ?? "") {
+                            currentReceivedDevice = device
+                            try device.send(text: dictonary?["message"] as? String ?? "")
                         }
                     } catch let error as NSError {
                         print(error)

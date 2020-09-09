@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:nearby_connections/nearby_connections.dart';
+import 'package:fluttertoast/fluttertoast.dart';
 
 void main() {
   runApp(MyApp());
@@ -11,12 +12,12 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   switch (settings.name) {
     case '/':
       return MaterialPageRoute(builder: (_) => Home());
-    case 'pos':
+    case 'browser':
       return MaterialPageRoute(
-          builder: (_) => DevicesListScreen(type: deviceType));
-    case 'cds':
+          builder: (_) => DevicesListScreen(deviceType: DeviceType.browser));
+    case 'advertiser':
       return MaterialPageRoute(
-          builder: (_) => DevicesListScreen(type: deviceType));
+          builder: (_) => DevicesListScreen(deviceType: DeviceType.advertiser));
     default:
       return MaterialPageRoute(
           builder: (_) => Scaffold(
@@ -26,7 +27,7 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   }
 }
 
-String deviceType;
+DeviceType deviceType;
 
 class MyApp extends StatelessWidget {
   @override
@@ -47,14 +48,14 @@ class Home extends StatelessWidget {
           Expanded(
             child: InkWell(
               onTap: () {
-                Navigator.pushNamed(context, 'pos');
-                deviceType = "pos";
+                Navigator.pushNamed(context, 'browser');
+                deviceType = DeviceType.browser;
               },
               child: Container(
                 color: Colors.red,
                 child: Center(
                     child: Text(
-                  'POS',
+                  'BROWSER',
                   style: TextStyle(color: Colors.white, fontSize: 40),
                 )),
               ),
@@ -63,14 +64,14 @@ class Home extends StatelessWidget {
           Expanded(
             child: InkWell(
               onTap: () {
-                Navigator.pushNamed(context, 'cds');
-                deviceType = "cds";
+                Navigator.pushNamed(context, 'advertiser');
+                deviceType = DeviceType.advertiser;
               },
               child: Container(
                 color: Colors.green,
                 child: Center(
                     child: Text(
-                  'CDS',
+                  'ADVERTISER',
                   style: TextStyle(color: Colors.white, fontSize: 40),
                 )),
               ),
@@ -82,10 +83,15 @@ class Home extends StatelessWidget {
   }
 }
 
-class DevicesListScreen extends StatefulWidget {
-  const DevicesListScreen({this.type});
+enum DeviceType {
+  advertiser,
+  browser
+}
 
-  final String type;
+class DevicesListScreen extends StatefulWidget {
+  const DevicesListScreen({this.deviceType});
+
+  final DeviceType deviceType;
 
   @override
   _DevicesListScreenState createState() => _DevicesListScreenState();
@@ -93,23 +99,42 @@ class DevicesListScreen extends StatefulWidget {
 
 class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> devices = [];
+  List<Device> connectedDevices = [];
   final nearbyService = NearbyService(serviceType: 'mp-connection');
   StreamSubscription subscription;
+  StreamSubscription receivedDataSubscription;
 
   @override
   void initState() {
     super.initState();
-    subscription = nearbyService.stateChangedSubscription(callback: (device) {
+
+    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
       setState(() {
         devices.clear();
-        devices.addAll(device);
+        devices.addAll(devicesList);
+        connectedDevices.clear();
+        connectedDevices.addAll(devicesList.where((d) => d.state == SessionState.connected).toList());
       });
+    });
+
+    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
+      Fluttertoast.showToast(msg: "Device ID: ${data.deviceID} , message: ${data.message}");
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      if (deviceType == 'browser') {
+        nearbyService.startBrowsingForPeers();
+      } else {
+        nearbyService.startAdvertisingPeer();
+        nearbyService.startBrowsingForPeers();
+      }
     });
   }
 
   @override
   void dispose() {
     subscription?.cancel();
+    receivedDataSubscription?.cancel();
     super.dispose();
   }
 
@@ -117,26 +142,13 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.type.toUpperCase()),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.cast_connected),
-            onPressed: () {
-              if (deviceType == 'pos') {
-                nearbyService.startBrowsingForPeers();
-              } else {
-                nearbyService.startAdvertisingPeer();
-                nearbyService.startBrowsingForPeers();
-              }
-            },
-          )
-        ],
+        title: Text(widget.deviceType.toString().substring(11).toUpperCase()),
       ),
       backgroundColor: Colors.white,
       body: ListView.builder(
-          itemCount: devices.length,
+          itemCount: getItemCount(),
           itemBuilder: (context, index) {
-            final device = devices[index];
+            final device = deviceType == DeviceType.advertiser? connectedDevices[index] : devices[index];
             return InkWell(
                 onTap: () {
                   _onTabItemListener(device);
@@ -180,7 +192,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       case SessionState.connecting:
         return "inviting";
       case SessionState.connected:
-        return "invited";
+        return "connected";
     }
   }
 
@@ -202,17 +214,18 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
             context: context,
             builder: (BuildContext context) {
               return AlertDialog(
-                title: Text("Device not connected!"),
+                title: Text("Connect to device?"),
                 actions: [
+                  FlatButton(
+                    child: Text("Cancel"),
+                    onPressed: () {
+                      Navigator.of(context).maybePop();
+                    },
+                  ),
                   FlatButton(
                     child: Text("Connect"),
                     onPressed: () {
                       nearbyService.inviteDevice(deviceID: device.deviceID);
-                    },
-                  ),
-                  FlatButton(
-                    child: Text("Cancel"),
-                    onPressed: () {
                       Navigator.of(context).maybePop();
                     },
                   )
@@ -224,19 +237,22 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         showDialog(
             context: context,
             builder: (BuildContext context) {
+              final myController = TextEditingController();
               return AlertDialog(
                 title: Text("Send message"),
+                content: TextField(controller: myController),
                 actions: [
-                  FlatButton(
-                    child: Text("Send"),
-                    onPressed: () {
-                      nearbyService.inviteDevice(deviceID: device.deviceID);
-                    },
-                  ),
                   FlatButton(
                     child: Text("Cancel"),
                     onPressed: () {
                       Navigator.of(context).pop();
+                    },
+                  ),
+                  FlatButton(
+                    child: Text("Send"),
+                    onPressed: () {
+                      nearbyService.sendMessage(device.deviceID, myController.text);
+                      myController.text = '';
                     },
                   )
                 ],
@@ -266,6 +282,14 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               );
             });
         break;
+    }
+  }
+
+  int getItemCount()  {
+    if(deviceType == DeviceType.advertiser) {
+      return connectedDevices.length;
+    } else {
+      return devices.length;
     }
   }
 }
