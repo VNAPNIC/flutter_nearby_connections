@@ -1,4 +1,4 @@
-part of nearby_connections;
+part of flutter_nearby_connections;
 
 const _initNearbyService = 'init_nearby_service';
 const _startAdvertisingPeer = 'start_advertising_peer';
@@ -21,7 +21,7 @@ typedef DataReceivedCallback = Function(Message data);
 
 class NearbyService {
   static const MethodChannel _channel =
-      const MethodChannel('nearby_connections');
+      const MethodChannel('flutter_nearby_connection');
 
   final _stateChangedController = StreamController<List<Device>>.broadcast();
 
@@ -33,7 +33,6 @@ class NearbyService {
   Stream<Message> get _dataReceivedStream => _dataReceivedController.stream;
 
   /// The class [NearbyService] supports the discovery of services provided by nearby devices and supports communicating with those services through message-based data, streaming data, and resources (such as files). In iOS, the framework uses infrastructure Wi-Fi networks, peer-to-peer Wi-Fi, and Bluetooth personal area networks for the underlying transport.
-  /// In macOS and tvOS, it uses infrastructure Wi-Fi, peer-to-peer Wi-Fi, and Ethernet.
   /// param [serviceType] max length 15 character
   NearbyService({@required String serviceType})
       : assert(serviceType.length <= 15) {
@@ -56,13 +55,13 @@ class NearbyService {
   }
 
   /// Begins advertising the service provided by a local peer.
-  /// The [startAdvertisingPeer] publishes an advertisement for a specific service that your app provides through the NearbyConnections framework and notifies its delegate about invitations from nearby peers.
+  /// The [startAdvertisingPeer] publishes an advertisement for a specific service that your app provides through the flutter_nearby_connections plugin and notifies its delegate about invitations from nearby peers.
   FutureOr<void> startAdvertisingPeer() {
     _channel.invokeMethod(_startAdvertisingPeer);
   }
 
   /// Starts browsing for peers.
-  /// Searches (by [serviceType]) for services offered by nearby devices using infrastructure Wi-Fi, peer-to-peer Wi-Fi, and Bluetooth or Ethernet, and provides the ability to easily invite those [Device] to a NearbyConnections session [SessionState].
+  /// Searches (by [serviceType]) for services offered by nearby devices using infrastructure Wi-Fi, peer-to-peer Wi-Fi, and Bluetooth or Ethernet, and provides the ability to easily invite those [Device] to a earby connections session [SessionState].
   FutureOr<void> startBrowsingForPeers() {
     _channel.invokeMethod(_startBrowsingForPeers);
   }
@@ -77,7 +76,7 @@ class NearbyService {
     _channel.invokeMethod(_stopBrowsingForPeers);
   }
 
-  /// Invites a discovered peer to join a NearbyConnections session.
+  /// Invites a discovered peer to join a nearby connections session.
   /// the [deviceID] is current Device
   FutureOr<void> invitePeer({@required String deviceID}) {
     _channel.invokeMethod(_invitePeer, deviceID);

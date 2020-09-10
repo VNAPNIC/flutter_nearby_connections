@@ -24,7 +24,7 @@ enum MethodCall: String {
 public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     
     public static func register(with registrar: FlutterPluginRegistrar) {
-        let channel = FlutterMethodChannel(name: "nearby_connections", binaryMessenger: registrar.messenger())
+        let channel = FlutterMethodChannel(name: "flutter_nearby_connection", binaryMessenger: registrar.messenger())
         let instance = SwiftNearbyConnectionsPlugin(channel: channel)
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
