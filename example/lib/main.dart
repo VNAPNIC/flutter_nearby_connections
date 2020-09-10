@@ -1,8 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:nearby_connections/nearby_connections.dart';
 import 'package:fluttertoast/fluttertoast.dart';
+import 'package:nearby_connections/nearby_connections.dart';
 
 void main() {
   runApp(MyApp());
@@ -83,10 +83,7 @@ class Home extends StatelessWidget {
   }
 }
 
-enum DeviceType {
-  advertiser,
-  browser
-}
+enum DeviceType { advertiser, browser }
 
 class DevicesListScreen extends StatefulWidget {
   const DevicesListScreen({this.deviceType});
@@ -108,17 +105,22 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void initState() {
     super.initState();
 
-    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
+    subscription =
+        nearbyService.stateChangedSubscription(callback: (devicesList) {
       setState(() {
         devices.clear();
         devices.addAll(devicesList);
         connectedDevices.clear();
-        connectedDevices.addAll(devicesList.where((d) => d.state == SessionState.connected).toList());
+        connectedDevices.addAll(devicesList
+            .where((d) => d.state == SessionState.connected)
+            .toList());
       });
     });
 
-    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
-      Fluttertoast.showToast(msg: "Device ID: ${data.deviceID} , message: ${data.message}");
+    receivedDataSubscription =
+        nearbyService.dataReceivedSubscription(callback: (data) {
+      Fluttertoast.showToast(
+          msg: "Device ID: ${data.deviceID} , message: ${data.message}");
     });
 
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
@@ -148,39 +150,60 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       body: ListView.builder(
           itemCount: getItemCount(),
           itemBuilder: (context, index) {
-            final device = deviceType == DeviceType.advertiser? connectedDevices[index] : devices[index];
-            return InkWell(
-                onTap: () {
-                  _onTabItemListener(device);
-                },
-                child: Container(
-                  margin: EdgeInsets.all(8.0),
-                  child: Column(
+            final device = deviceType == DeviceType.advertiser
+                ? connectedDevices[index]
+                : devices[index];
+            return Container(
+              margin: EdgeInsets.all(8.0),
+              child: Column(
+                children: [
+                  Row(
                     children: [
-                      Row(
-                        children: [
-                          Expanded(child: Text(device.displayName)),
-                          Container(
-                            margin: EdgeInsets.symmetric(horizontal: 8.0),
-                            padding: EdgeInsets.all(8.0),
-                            height: 35,
-                            width: 100,
-                            color: getStateColor(device.state),
-                            child: Center(
-                              child: Text(
-                                getStateName(device.state),
-                                style:
-                                TextStyle(color: Colors.white,fontWeight: FontWeight.bold),
-                              ),
+                      Expanded(
+                          child: GestureDetector(
+                            onTap: ()=> _onTabItemListener(device),
+                        child: Column(
+                          children: [
+                            Text(device.displayName),
+                            Text(
+                              getStateName(device.state),
+                              style:
+                                  TextStyle(color: getStateColor(device.state)),
                             ),
-                          )
-                        ],
-                      ),
-                      SizedBox(height: 8.0,),
-                      Divider(height: 1,color: Colors.grey,)
+                          ],
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                        ),
+                      )),
+                      GestureDetector(
+                        onTap: ()=> _onButtonClicked(device),
+                        child: Container(
+                          margin: EdgeInsets.symmetric(horizontal: 8.0),
+                          padding: EdgeInsets.all(8.0),
+                          height: 35,
+                          width: 100,
+                          color: getButtonColor(device.state),
+                          child: Center(
+                            child: Text(
+                              getButtonStateName(device.state),
+                              style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold),
+                            ),
+                          ),
+                        ),
+                      )
                     ],
                   ),
-                ));
+                  SizedBox(
+                    height: 8.0,
+                  ),
+                  Divider(
+                    height: 1,
+                    color: Colors.grey,
+                  )
+                ],
+              ),
+            );
           }),
     );
   }
@@ -188,108 +211,94 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   String getStateName(SessionState state) {
     switch (state) {
       case SessionState.notConnected:
-        return "invite";
+        return "disconnected";
       case SessionState.connecting:
-        return "inviting";
+        return "waiting";
+        
       case SessionState.connected:
         return "connected";
+    }
+  }
+
+  String getButtonStateName(SessionState state) {
+    switch (state) {
+      case SessionState.notConnected:
+      case SessionState.connecting:
+        return "Connect";
+      case SessionState.connected:
+        return "Disconnect";
     }
   }
 
   Color getStateColor(SessionState state) {
     switch (state) {
       case SessionState.notConnected:
-        return Colors.green;
+        return Colors.black;
       case SessionState.connecting:
         return Colors.grey;
       case SessionState.connected:
-        return Colors.indigoAccent;
+        return Colors.green;
+    }
+  }
+
+  Color getButtonColor(SessionState state) {
+    switch (state) {
+      case SessionState.notConnected:
+      case SessionState.connecting:
+        return Colors.green;
+      case SessionState.connected:
+        return Colors.red;
     }
   }
 
   _onTabItemListener(Device device) {
-    switch (device.state) {
-      case SessionState.notConnected:
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text("Connect to device?"),
-                actions: [
-                  FlatButton(
-                    child: Text("Cancel"),
-                    onPressed: () {
-                      Navigator.of(context).maybePop();
-                    },
-                  ),
-                  FlatButton(
-                    child: Text("Connect"),
-                    onPressed: () {
-                      nearbyService.inviteDevice(deviceID: device.deviceID);
-                      Navigator.of(context).maybePop();
-                    },
-                  )
-                ],
-              );
-            });
-        break;
-      case SessionState.connected:
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              final myController = TextEditingController();
-              return AlertDialog(
-                title: Text("Send message"),
-                content: TextField(controller: myController),
-                actions: [
-                  FlatButton(
-                    child: Text("Cancel"),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                  FlatButton(
-                    child: Text("Send"),
-                    onPressed: () {
-                      nearbyService.sendMessage(device.deviceID, myController.text);
-                      myController.text = '';
-                    },
-                  )
-                ],
-              );
-            });
-        break;
-      case SessionState.connecting:
-        showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: Text("Device not connected!"),
-                actions: [
-                  FlatButton(
-                    child: Text("Connect"),
-                    onPressed: () {
-                      nearbyService.inviteDevice(deviceID: device.deviceID);
-                    },
-                  ),
-                  FlatButton(
-                    child: Text("Cancel"),
-                    onPressed: () {
-                      Navigator.of(context).maybePop();
-                    },
-                  )
-                ],
-              );
-            });
-        break;
+    if(device.state == SessionState.connected) {
+      showDialog(
+          context: context,
+          builder: (BuildContext context) {
+            final myController = TextEditingController();
+            return AlertDialog(
+              title: Text("Send message"),
+              content: TextField(controller: myController),
+              actions: [
+                FlatButton(
+                  child: Text("Cancel"),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                ),
+                FlatButton(
+                  child: Text("Send"),
+                  onPressed: () {
+                    nearbyService.sendMessage(
+                        device.deviceID, myController.text);
+                    myController.text = '';
+                  },
+                )
+              ],
+            );
+          });
     }
   }
 
-  int getItemCount()  {
-    if(deviceType == DeviceType.advertiser) {
+  int getItemCount() {
+    if (deviceType == DeviceType.advertiser) {
       return connectedDevices.length;
     } else {
       return devices.length;
+    }
+  }
+
+  _onButtonClicked(Device device) {
+    switch (device.state) {
+      case SessionState.notConnected:
+        nearbyService.inviteDevice(deviceID: device.deviceID);
+        break;
+      case SessionState.connected:
+        nearbyService.uninvitedDevice(deviceID: device.deviceID);
+        break;
+      case SessionState.connecting:
+        break;
     }
   }
 }
