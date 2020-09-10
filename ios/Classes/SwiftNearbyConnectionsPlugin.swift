@@ -16,7 +16,7 @@ enum MethodCall: String {
     case stopBrowsingForPeers = "stop_browsing_for_peers"
     
     case invitePeer = "invite_peer"
-    case uninvitedPeer = "uninvited_peer"
+    case disconnectPeer = "disconnect_peer"
     
     case sendMessage = "send_message"
 }
@@ -103,10 +103,10 @@ public class SwiftNearbyConnectionsPlugin: NSObject, FlutterPlugin {
             if(deviceID != nil){
                 MPCManager.instance.invitePeer(deviceID: deviceID!)
             }
-        case .uninvitedPeer:
+        case .disconnectPeer:
             let deviceID:String? = call.arguments as? String ?? nil
             if(deviceID != nil){
-                MPCManager.instance.invitePeer(deviceID: deviceID!)
+                MPCManager.instance.disconnectPeer(deviceID: deviceID!)
             }
         case .sendMessage:
             let jsonData: String? = call.arguments as? String ?? nil

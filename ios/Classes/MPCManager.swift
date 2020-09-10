@@ -101,7 +101,7 @@ class MPCManager: NSObject {
         device?.invite(with: self.browser)
     }
     
-    func uninvitePeer(deviceID: String){
+    func disconnectPeer(deviceID: String){
         self.devices.forEach { (element) in
             if(element.deviceId == deviceID){
                 element.disconnect()
@@ -153,5 +153,8 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
         let device = self.device(for: peerID)
         device.disconnect()
+        devices.removeAll { (device) -> Bool in
+            device.peerID == peerID
+        }
     }
 }

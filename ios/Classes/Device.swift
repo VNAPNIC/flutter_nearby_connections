@@ -26,6 +26,7 @@ class Device: NSObject {
     func disconnect() {
         self.session?.disconnect()
         self.session = nil
+        NotificationCenter.default.post(name: MPCManager.Notifications.deviceDidChangeState, object: self)
     }
     
     func invite(with browser: MCNearbyServiceBrowser) {

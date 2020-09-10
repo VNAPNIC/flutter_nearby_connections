@@ -27,8 +27,6 @@ Route<dynamic> generateRoute(RouteSettings settings) {
   }
 }
 
-DeviceType deviceType;
-
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
@@ -49,7 +47,6 @@ class Home extends StatelessWidget {
             child: InkWell(
               onTap: () {
                 Navigator.pushNamed(context, 'browser');
-                deviceType = DeviceType.browser;
               },
               child: Container(
                 color: Colors.red,
@@ -65,7 +62,6 @@ class Home extends StatelessWidget {
             child: InkWell(
               onTap: () {
                 Navigator.pushNamed(context, 'advertiser');
-                deviceType = DeviceType.advertiser;
               },
               child: Container(
                 color: Colors.green,
@@ -105,8 +101,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void initState() {
     super.initState();
 
-    subscription =
-        nearbyService.stateChangedSubscription(callback: (devicesList) {
+    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
       setState(() {
         devices.clear();
         devices.addAll(devicesList);
@@ -117,19 +112,18 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       });
     });
 
-    receivedDataSubscription =
-        nearbyService.dataReceivedSubscription(callback: (data) {
+    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
       Fluttertoast.showToast(
           msg: "Device ID: ${data.deviceID} , message: ${data.message}");
     });
 
+    if (widget.deviceType == DeviceType.browser) {
+      nearbyService.startBrowsingForPeers();
+    } else {
+      nearbyService.startAdvertisingPeer();
+      nearbyService.startBrowsingForPeers();
+    }
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (deviceType == 'browser') {
-        nearbyService.startBrowsingForPeers();
-      } else {
-        nearbyService.startAdvertisingPeer();
-        nearbyService.startBrowsingForPeers();
-      }
     });
   }
 
@@ -137,6 +131,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void dispose() {
     subscription?.cancel();
     receivedDataSubscription?.cancel();
+    nearbyService.stopBrowsingForPeers();
+    nearbyService.startAdvertisingPeer();
     super.dispose();
   }
 
@@ -150,7 +146,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       body: ListView.builder(
           itemCount: getItemCount(),
           itemBuilder: (context, index) {
-            final device = deviceType == DeviceType.advertiser
+            final device = widget.deviceType == DeviceType.advertiser
                 ? connectedDevices[index]
                 : devices[index];
             return Container(
@@ -214,7 +210,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         return "disconnected";
       case SessionState.connecting:
         return "waiting";
-        
       case SessionState.connected:
         return "connected";
     }
@@ -282,7 +277,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
 
   int getItemCount() {
-    if (deviceType == DeviceType.advertiser) {
+    if (widget.deviceType == DeviceType.advertiser) {
       return connectedDevices.length;
     } else {
       return devices.length;
@@ -292,10 +287,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   _onButtonClicked(Device device) {
     switch (device.state) {
       case SessionState.notConnected:
-        nearbyService.inviteDevice(deviceID: device.deviceID);
+        nearbyService.invitePeer(deviceID: device.deviceID);
         break;
       case SessionState.connected:
-        nearbyService.uninvitedDevice(deviceID: device.deviceID);
+        nearbyService.disconnectPeer(deviceID: device.deviceID);
         break;
       case SessionState.connecting:
         break;

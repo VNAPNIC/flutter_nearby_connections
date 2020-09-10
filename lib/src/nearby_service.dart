@@ -6,7 +6,7 @@ const _stopAdvertisingPeer = 'stop_advertising_peer';
 const _startBrowsingForPeers = 'start_browsing_for_peers';
 const _stopBrowsingForPeers = 'stop_browsing_for_peers';
 const _invitePeer = 'invite_peer';
-const _uninvitedPeer = 'uninvited_peer';
+const _disconnectPeer = 'disconnect_peer';
 const _sendMessage = 'send_message';
 const _invokeChangeStateMethod = "invoke_change_state_method";
 const _invokeMessageReceiveMethod = "invoke_message_receive_method";
@@ -57,40 +57,40 @@ class NearbyService {
 
   /// Begins advertising the service provided by a local peer.
   /// The [startAdvertisingPeer] publishes an advertisement for a specific service that your app provides through the NearbyConnections framework and notifies its delegate about invitations from nearby peers.
-  void startAdvertisingPeer() {
+  FutureOr<void> startAdvertisingPeer() {
     _channel.invokeMethod(_startAdvertisingPeer);
   }
 
   /// Starts browsing for peers.
   /// Searches (by [serviceType]) for services offered by nearby devices using infrastructure Wi-Fi, peer-to-peer Wi-Fi, and Bluetooth or Ethernet, and provides the ability to easily invite those [Device] to a NearbyConnections session [SessionState].
-  void startBrowsingForPeers() {
+  FutureOr<void> startBrowsingForPeers() {
     _channel.invokeMethod(_startBrowsingForPeers);
   }
 
   /// Stops advertising this peer device for connection.
-  void stopAdvertisingPeer() {
+  FutureOr<void> stopAdvertisingPeer() {
     _channel.invokeMethod(_stopAdvertisingPeer);
   }
 
   /// Stops browsing for peers.
-  void stopBrowsingForPeers() {
+  FutureOr<void> stopBrowsingForPeers() {
     _channel.invokeMethod(_stopBrowsingForPeers);
   }
 
   /// Invites a discovered peer to join a NearbyConnections session.
   /// the [deviceID] is current Device
-  void inviteDevice({@required String deviceID}) {
+  FutureOr<void> invitePeer({@required String deviceID}) {
     _channel.invokeMethod(_invitePeer, deviceID);
   }
 
   /// Disconnects the local peer from the session.
   /// the [deviceID] is current Device
-  void uninvitedDevice({@required String deviceID}) {
-    _channel.invokeMethod(_uninvitedPeer, deviceID);
+  FutureOr<void> disconnectPeer({@required String deviceID}) {
+    _channel.invokeMethod(_disconnectPeer, deviceID);
   }
 
   /// Sends a message encapsulated in a Data instance to nearby peers.
-  void sendMessage(String deviceID, String argument) {
+  FutureOr<void> sendMessage(String deviceID, String argument) {
     _channel.invokeMethod(
         _sendMessage,
         "{"
