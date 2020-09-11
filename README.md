@@ -14,3 +14,7 @@ startAdvertisingPeer, startBrowsingForPeers, stopAdvertisingPeer
 
 We separate the dependencies of the MCNearbyServiceAdvertiser, MCNearbyServiceBrowser and MCSession classes.  All of the methods will be implemented in the NearbyService class.
 
+#### Test on IOS device
+
+![The example app running in IOS](https://github.com/VNAPNIC/flutter_nearby_connections/blob/master/screen.gif?raw=true)
+
