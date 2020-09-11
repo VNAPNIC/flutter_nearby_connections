@@ -1,8 +1,7 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import 'package:fluttertoast/fluttertoast.dart';
-import 'package:nearby_connections/nearby_connections.dart';
 
 void main() {
   runApp(MyApp());
@@ -210,7 +209,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         return "disconnected";
       case SessionState.connecting:
         return "waiting";
-      case SessionState.connected:
+      default:
         return "connected";
     }
   }
@@ -220,7 +219,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       case SessionState.notConnected:
       case SessionState.connecting:
         return "Connect";
-      case SessionState.connected:
+      default:
         return "Disconnect";
     }
   }
@@ -231,7 +230,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         return Colors.black;
       case SessionState.connecting:
         return Colors.grey;
-      case SessionState.connected:
+      default:
         return Colors.green;
     }
   }
@@ -241,7 +240,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       case SessionState.notConnected:
       case SessionState.connecting:
         return Colors.green;
-      case SessionState.connected:
+      default:
         return Colors.red;
     }
   }

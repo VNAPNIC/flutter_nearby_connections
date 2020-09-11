@@ -1,9 +1,9 @@
 #
 # To learn more about a Podspec see http://guides.cocoapods.org/syntax/podspec.html.
-# Run `pod lib lint nearby_connections.podspec' to validate before publishing.
+# Run `pod lib lint flutter_nearby_connections.podspec' to validate before publishing.
 #
 Pod::Spec.new do |s|
-  s.name             = 'nearby_connections'
+  s.name             = 'flutter_nearby_connections'
   s.version          = '0.0.1'
   s.summary          = 'A new flutter plugin project.'
   s.description      = <<-DESC

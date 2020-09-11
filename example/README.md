@@ -1,6 +1,6 @@
-# nearby_connections_example
+# flutter_nearby_connections_example
 
-Demonstrates how to use the nearby_connections plugin.
+Demonstrates how to use the flutter_nearby_connections plugin.
 
 ## Getting Started
 

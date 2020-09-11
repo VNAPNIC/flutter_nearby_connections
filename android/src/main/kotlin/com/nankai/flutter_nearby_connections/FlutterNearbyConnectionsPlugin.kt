@@ -1,4 +1,4 @@
-package com.nankai.nearby_connections
+package com.nankai.flutter_nearby_connections
 
 import androidx.annotation.NonNull
 
@@ -11,22 +11,24 @@ import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
 
-/** NearbyConnectionsPlugin */
-class NearbyConnectionsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
+/** FlutterNearbyConnectionsPlugin */
+class FlutterNearbyConnectionsPlugin: FlutterPlugin, MethodCallHandler, ActivityAware {
   private lateinit var channel : MethodChannel
   private var locationHelper: LocationHelper? = null
   private var activityPluginBinding: ActivityPluginBinding? = null
 
   override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
-    channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, "nearby_connections")
+    channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, viewTypeId)
     channel.setMethodCallHandler(this)
   }
 
   companion object {
+    private val viewTypeId = "flutter_nearby_connections"
+
     @JvmStatic
     fun registerWith(registrar: Registrar) {
-      val channel = MethodChannel(registrar.messenger(), "nearby_connections")
-      channel.setMethodCallHandler(NearbyConnectionsPlugin())
+      val channel = MethodChannel(registrar.messenger(), viewTypeId)
+      channel.setMethodCallHandler(FlutterNearbyConnectionsPlugin())
     }
   }
 

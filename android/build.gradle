@@ -1,4 +1,4 @@
-group 'com.nankai.nearby_connections'
+group 'com.nankai.flutter_nearby_connections'
 version '1.0-SNAPSHOT'
 
 buildscript {

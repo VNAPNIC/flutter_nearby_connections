@@ -1,4 +1,4 @@
-package com.nankai.nearby_connections
+package com.nankai.flutter_nearby_connections
 
 import android.Manifest
 import android.app.Activity

@@ -21,7 +21,7 @@ typedef DataReceivedCallback = Function(Message data);
 
 class NearbyService {
   static const MethodChannel _channel =
-      const MethodChannel('flutter_nearby_connection');
+      const MethodChannel('flutter_nearby_connections');
 
   final _stateChangedController = StreamController<List<Device>>.broadcast();
 
