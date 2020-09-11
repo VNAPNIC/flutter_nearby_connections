@@ -100,7 +100,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void initState() {
     super.initState();
 
-    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
+    subscription =
+        nearbyService.stateChangedSubscription(callback: (devicesList) {
       setState(() {
         devices.clear();
         devices.addAll(devicesList);
@@ -111,7 +112,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       });
     });
 
-    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
+    receivedDataSubscription =
+        nearbyService.dataReceivedSubscription(callback: (data) {
       Fluttertoast.showToast(
           msg: "Device ID: ${data.deviceID} , message: ${data.message}");
     });
@@ -122,8 +124,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       nearbyService.startAdvertisingPeer();
       nearbyService.startBrowsingForPeers();
     }
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-    });
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {});
   }
 
   @override
@@ -156,7 +157,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                     children: [
                       Expanded(
                           child: GestureDetector(
-                            onTap: ()=> _onTabItemListener(device),
+                        onTap: () => _onTabItemListener(device),
                         child: Column(
                           children: [
                             Text(device.displayName),
@@ -170,7 +171,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                         ),
                       )),
                       GestureDetector(
-                        onTap: ()=> _onButtonClicked(device),
+                        onTap: () => _onButtonClicked(device),
                         child: Container(
                           margin: EdgeInsets.symmetric(horizontal: 8.0),
                           padding: EdgeInsets.all(8.0),
@@ -246,7 +247,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
 
   _onTabItemListener(Device device) {
-    if(device.state == SessionState.connected) {
+    if (device.state == SessionState.connected) {
       showDialog(
           context: context,
           builder: (BuildContext context) {

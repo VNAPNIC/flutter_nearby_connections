@@ -3,7 +3,6 @@ part of flutter_nearby_connections;
 /// The class [Message] data transmitted between two peers.
 /// it will contain [Message.deviceID] and [Message.message]
 class Message {
-  
   /// Sender's ID
   final String deviceID;
 
