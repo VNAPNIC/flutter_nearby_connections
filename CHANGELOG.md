@@ -1,3 +1,7 @@
+## 0.0.4
+
+* Fix syntax error
+
 ## 0.0.3
 
 * Update send message function
