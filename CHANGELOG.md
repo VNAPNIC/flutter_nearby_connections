@@ -1,3 +1,7 @@
+## 0.0.3
+
+* Update send message function
+
 ## 0.0.2
 
 * fix static analysis.

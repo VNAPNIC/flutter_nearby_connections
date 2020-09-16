@@ -17,7 +17,7 @@ typedef StateChangedCallback = Function(List<Device> arguments);
 
 /// [DataReceivedCallback] is used to call back an object under List<Device>.
 /// [DataReceivedCallback] will call when you register in [dataReceivedSubscription]
-typedef DataReceivedCallback = Function(Message data);
+typedef DataReceivedCallback = Function(dynamic data);
 
 class NearbyService {
   static const MethodChannel _channel =
@@ -28,11 +28,15 @@ class NearbyService {
   Stream<List<Device>> get _stateChangedStream =>
       _stateChangedController.stream;
 
-  final _dataReceivedController = StreamController<Message>.broadcast();
+  final _dataReceivedController = StreamController<dynamic>.broadcast();
 
-  Stream<Message> get _dataReceivedStream => _dataReceivedController.stream;
+  Stream<dynamic> get _dataReceivedStream => _dataReceivedController.stream;
 
-  /// The class [NearbyService] supports the discovery of services provided by nearby devices and supports communicating with those services through message-based data, streaming data, and resources (such as files). In iOS, the framework uses infrastructure Wi-Fi networks, peer-to-peer Wi-Fi, and Bluetooth personal area networks for the underlying transport.
+  /// The class [NearbyService] supports the discovery of services provided by
+  /// nearby devices and supports communicating with those services through
+  /// message-based data, streaming data, and resources (such as files).
+  /// In iOS, the framework uses infrastructure Wi-Fi networks, peer-to-peer Wi-Fi,
+  /// and Bluetooth personal area networks for the underlying transport.
   /// param [serviceType] max length 15 character
   NearbyService({@required String serviceType})
       : assert(serviceType.length <= 15) {
@@ -47,21 +51,25 @@ class NearbyService {
           _stateChangedController.add(devices);
           break;
         case _invokeMessageReceiveMethod:
-          Message data = Message.fromJson(jsonDecode(call.arguments));
-          _dataReceivedController.add(data);
+          _dataReceivedController.add(jsonDecode(call.arguments));
           break;
       }
     });
   }
 
   /// Begins advertising the service provided by a local peer.
-  /// The [startAdvertisingPeer] publishes an advertisement for a specific service that your app provides through the flutter_nearby_connections plugin and notifies its delegate about invitations from nearby peers.
+  /// The [startAdvertisingPeer] publishes an advertisement for a specific service
+  /// that your app provides through the flutter_nearby_connections plugin and
+  /// notifies its delegate about invitations from nearby peers.
   FutureOr<void> startAdvertisingPeer() {
     _channel.invokeMethod(_startAdvertisingPeer);
   }
 
   /// Starts browsing for peers.
-  /// Searches (by [serviceType]) for services offered by nearby devices using infrastructure Wi-Fi, peer-to-peer Wi-Fi, and Bluetooth or Ethernet, and provides the ability to easily invite those [Device] to a earby connections session [SessionState].
+  /// Searches (by [serviceType]) for services offered by nearby devices using
+  /// infrastructure Wi-Fi, peer-to-peer Wi-Fi, and Bluetooth or Ethernet, and
+  /// provides the ability to easily invite those [Device] to a earby connections
+  /// session [SessionState].
   FutureOr<void> startBrowsingForPeers() {
     _channel.invokeMethod(_startBrowsingForPeers);
   }
@@ -89,23 +97,23 @@ class NearbyService {
   }
 
   /// Sends a message encapsulated in a Data instance to nearby peers.
-  FutureOr<void> sendMessage(String deviceID, String argument) {
+  FutureOr<void> sendMessage(String deviceID, Map<String,dynamic> argument) {
+    argument['device_id'] = deviceID;
     _channel.invokeMethod(
-        _sendMessage,
-        "{"
-        "\"deviceID\":\"$deviceID\","
-        "\"message\": \"$argument\""
-        "}");
+        _sendMessage, jsonEncode(argument));
   }
 
-  /// [stateChangedSubscription] helps you listen to the changes of peers with the circumstances: find a new peer, a peer is invited, a peer is disconnected, a peer is invited to connect by another peer, or 2 peers are connected.
+  /// [stateChangedSubscription] helps you listen to the changes of peers with
+  /// the circumstances: find a new peer, a peer is invited, a peer is disconnected,
+  /// a peer is invited to connect by another peer, or 2 peers are connected.
   /// [stateChangedSubscription] will return you a list of [Device].
   /// see [StateChangedCallback]
   StreamSubscription stateChangedSubscription(
           {@required StateChangedCallback callback}) =>
       _stateChangedStream.listen(callback);
 
-  /// The [dataReceivedSubscription] helps you listen when a peer sends you text messages. and it returns you a object [Data].
+  /// The [dataReceivedSubscription] helps you listen when a peer sends you
+  /// text messages. and it returns you a object [Data].
   /// It returns a [StreamSubscription] so you can cancel listening at any time.
   /// see [DataReceivedCallback]
   StreamSubscription dataReceivedSubscription(

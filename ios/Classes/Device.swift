@@ -1,6 +1,6 @@
 import Foundation
 import MultipeerConnectivity
-
+import SwiftyJSON
 class Device: NSObject {
     let peerID: MCPeerID
     var session: MCSession?
@@ -43,10 +43,7 @@ extension Device: MCSessionDelegate {
     }
     
     public func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
-        if let message = try? JSONDecoder().decode(Message.self, from: data) {
-            self.lastMessageReceived = message
-            NotificationCenter.default.post(name: Device.messageReceivedNotification, object: nil, userInfo: ["from": peerID])
-        }
+        NotificationCenter.default.post(name: Device.messageReceivedNotification, object: nil, userInfo: ["from": peerID, "data": data])
     }
     
     public func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) { }

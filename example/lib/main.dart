@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -112,10 +113,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       });
     });
 
-    receivedDataSubscription =
-        nearbyService.dataReceivedSubscription(callback: (data) {
-      Fluttertoast.showToast(
-          msg: "Device ID: ${data.deviceID} , message: ${data.message}");
+    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
+      Fluttertoast.showToast(msg: jsonEncode(data));
     });
 
     if (widget.deviceType == DeviceType.browser) {
@@ -265,8 +264,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 FlatButton(
                   child: Text("Send"),
                   onPressed: () {
-                    nearbyService.sendMessage(
-                        device.deviceID, myController.text);
+                    String jsonData = '{ "message": \" ${myController.text}\" }';
+                    nearbyService.sendMessage(device.deviceID, jsonDecode(jsonData));
                     myController.text = '';
                   },
                 )
