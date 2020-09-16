@@ -67,7 +67,7 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         do {
             if let data = notification.userInfo?["data"] as? Data, let stringData = JSON(data).rawString() {
                 self.channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD,
-                                     arguments: stringData)
+                                          arguments: stringData)
             }
         } catch let e {
             print(e.localizedDescription)
@@ -121,6 +121,9 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
             } catch let error as NSError {
                 print(error)
             }
+        default:
+            return
+        }
     }
-
+    
 }
