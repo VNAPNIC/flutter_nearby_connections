@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -113,7 +114,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       });
     });
 
-    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
+    receivedDataSubscription =
+        nearbyService.dataReceivedSubscription(callback: (data) {
       Fluttertoast.showToast(msg: jsonEncode(data));
     });
 
@@ -264,8 +266,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 FlatButton(
                   child: Text("Send"),
                   onPressed: () {
-                    String jsonData = '{ "message": \" ${myController.text}\" }';
-                    nearbyService.sendMessage(device.deviceID, jsonDecode(jsonData));
+                    String jsonData =
+                        '{ "message": \" ${myController.text}\" }';
+                    nearbyService.sendMessage(
+                        device.deviceID, jsonDecode(jsonData));
                     myController.text = '';
                   },
                 )

@@ -97,10 +97,9 @@ class NearbyService {
   }
 
   /// Sends a message encapsulated in a Data instance to nearby peers.
-  FutureOr<void> sendMessage(String deviceID, Map<String,dynamic> argument) {
+  FutureOr<void> sendMessage(String deviceID, Map<String, dynamic> argument) {
     argument['device_id'] = deviceID;
-    _channel.invokeMethod(
-        _sendMessage, jsonEncode(argument));
+    _channel.invokeMethod(_sendMessage, jsonEncode(argument));
   }
 
   /// [stateChangedSubscription] helps you listen to the changes of peers with
