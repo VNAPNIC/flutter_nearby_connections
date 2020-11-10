@@ -26,27 +26,37 @@ class CallbackUtils constructor(private val channel: MethodChannel) {
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, json)
     }
 
+    fun removeDevice(deviceId: String){
+        devices.remove(device(deviceId))
+        val json = gson.toJson(devices)
+        channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, json)
+    }
+
     val advertConnectionLifecycleCallback: ConnectionLifecycleCallback = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-            Log.d("nearby_connections", "onConnectionInitiated")
+            Log.d("nearby_connections", "onConnectionInitiated $endpointId")
             val data = DeviceJson(endpointId, connectionInfo.endpointName, 3)
             addDevice(data)
         }
 
         override fun onConnectionResult(endpointId: String, connectionResolution: ConnectionResolution) {
-            Log.d("nearby_connections", "onConnectionResult")
-            val data = DeviceJson(endpointId, if (device(endpointId)?.displayName == null) "Null" else device(endpointId)?.displayName!!, when (connectionResolution.status.statusCode) {
-                ConnectionsStatusCodes.STATUS_OK -> 2
-                ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> 3
-                ConnectionsStatusCodes.STATUS_ERROR -> 3
-                else -> 3
-            })
+            Log.d("nearby_connections", "onConnectionResult $endpointId")
+            val data = DeviceJson(endpointId,
+                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
+                    when (connectionResolution.status.statusCode) {
+                        ConnectionsStatusCodes.STATUS_OK -> 2
+                        ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> 3
+                        ConnectionsStatusCodes.STATUS_ERROR -> 3
+                        else -> 3
+                    })
             addDevice(data)
         }
 
         override fun onDisconnected(endpointId: String) {
-            Log.d("nearby_connections", "onDisconnected")
-            val data = DeviceJson(endpointId, if (device(endpointId)?.displayName == null) "Null" else device(endpointId)?.displayName!!, 3)
+            Log.d("nearby_connections", "onDisconnected $endpointId")
+            val data = DeviceJson(endpointId,
+                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
+                    3)
             addDevice(data)
         }
     }
@@ -54,70 +64,55 @@ class CallbackUtils constructor(private val channel: MethodChannel) {
     val endpointDiscoveryCallback: EndpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String,
                                      discoveredEndpointInfo: DiscoveredEndpointInfo) {
-            Log.d("nearby_connections", "onEndpointFound")
-            val data = DeviceJson(endpointId, discoveredEndpointInfo.endpointName, 1)
+            Log.d("nearby_connections", "onEndpointFound $endpointId")
+            val data = DeviceJson(endpointId, discoveredEndpointInfo.endpointName, 3)
             addDevice(data)
         }
 
         override fun onEndpointLost(endpointId: String) {
-            Log.d("nearby_connections", "onEndpointLost")
-            val data = DeviceJson(endpointId, if (device(endpointId)?.displayName == null) "Null" else device(endpointId)?.displayName!!, 3)
-            addDevice(data)
+            Log.d("nearby_connections", "onEndpointLost $endpointId")
+            removeDevice(endpointId)
         }
     }
 
     val discoverConnectionLifecycleCallback: ConnectionLifecycleCallback = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-            Log.d("nearby_connections", "onConnectionInitiated")
+            Log.d("nearby_connections", "onConnectionInitiated $endpointId")
             val data = DeviceJson(endpointId, connectionInfo.endpointName, 3)
             addDevice(data)
         }
 
         override fun onConnectionResult(endpointId: String, connectionResolution: ConnectionResolution) {
-            Log.d("nearby_connections", "onConnectionResult")
-            val data = DeviceJson(endpointId, if (device(endpointId)?.displayName == null) "Null" else device(endpointId)?.displayName!!, when (connectionResolution.status.statusCode) {
-                ConnectionsStatusCodes.STATUS_OK -> 2
-                ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> 3
-                ConnectionsStatusCodes.STATUS_ERROR -> 3
-                else -> 3
-            })
+            Log.d("nearby_connections", "onConnectionResult $endpointId")
+            val data = DeviceJson(endpointId,
+                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
+                    when (connectionResolution.status.statusCode) {
+                        ConnectionsStatusCodes.STATUS_OK -> 2
+                        ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> 3
+                        ConnectionsStatusCodes.STATUS_ERROR -> 3
+                        else -> 3
+                    })
             addDevice(data)
         }
 
         override fun onDisconnected(endpointId: String) {
-            Log.d("nearby_connections", "onDisconnected")
-            val data = DeviceJson(endpointId, if (device(endpointId)?.displayName == null) "Null" else device(endpointId)?.displayName!!, 3)
+            Log.d("nearby_connections", "onDisconnected $endpointId")
+            val data = DeviceJson(endpointId,
+                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
+                    3)
             addDevice(data)
         }
     }
 
     val payloadCallback: PayloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
-            Log.d("nearby_connections", "onPayloadReceived")
-            val args: MutableMap<String, Any?> = HashMap()
-            args["endpointId"] = endpointId
-            args["payloadId"] = payload.id
-            args["type"] = payload.type
-            if (payload.type == Payload.Type.BYTES) {
-                val bytes = payload.asBytes()!!
-                args["bytes"] = bytes
-            } else if (payload.type == Payload.Type.FILE) {
-                args["filePath"] = payload.asFile()!!.asJavaFile()!!.absolutePath
-            }
-            channel.invokeMethod("onPayloadReceived", args)
+            Log.d("nearby_connections", "onPayloadReceived $endpointId")
         }
 
         override fun onPayloadTransferUpdate(endpointId: String,
                                              payloadTransferUpdate: PayloadTransferUpdate) {
             // required for files and streams
-            Log.d("nearby_connections", "onPayloadTransferUpdate")
-            val args: MutableMap<String, Any> = HashMap()
-            args["endpointId"] = endpointId
-            args["payloadId"] = payloadTransferUpdate.payloadId
-            args["status"] = payloadTransferUpdate.status
-            args["bytesTransferred"] = payloadTransferUpdate.bytesTransferred
-            args["totalBytes"] = payloadTransferUpdate.totalBytes
-            channel.invokeMethod("onPayloadTransferUpdate", args)
+            Log.d("nearby_connections", "onPayloadTransferUpdate $endpointId")
         }
     }
 }

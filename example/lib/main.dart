@@ -102,8 +102,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void initState() {
     super.initState();
 
-    subscription =
-        nearbyService.stateChangedSubscription(callback: (devicesList) {
+    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
+      devicesList?.forEach((element) {
+        print(" deviceID: ${element.deviceID} | deviceName: ${element.deviceName} | state: ${element.state}");
+      });
       setState(() {
         devices.clear();
         devices.addAll(devicesList);
@@ -161,7 +163,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                         onTap: () => _onTabItemListener(device),
                         child: Column(
                           children: [
-                            Text(device.displayName),
+                            Text(device.deviceName),
                             Text(
                               getStateName(device.state),
                               style:
@@ -266,10 +268,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 FlatButton(
                   child: Text("Send"),
                   onPressed: () {
-                    String jsonData =
-                        '{ "message": \" ${myController.text}\" }';
-                    nearbyService.sendMessage(
-                        device.deviceID, jsonDecode(jsonData));
+                    nearbyService.sendMessage(device.deviceID, myController.text);
                     myController.text = '';
                   },
                 )
@@ -290,7 +289,10 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   _onButtonClicked(Device device) {
     switch (device.state) {
       case SessionState.notConnected:
-        nearbyService.invitePeer(deviceID: device.deviceID);
+        nearbyService.invitePeer(
+          deviceID: device.deviceID,
+          deviceName: device.deviceName,
+        );
         break;
       case SessionState.connected:
         nearbyService.disconnectPeer(deviceID: device.deviceID);

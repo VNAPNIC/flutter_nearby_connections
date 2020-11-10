@@ -34,13 +34,13 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     
     struct DeviceJson {
         var deviceID:String
-        var displayName:String
+        var deviceName:String
         var state:Int
         
         func toStringAnyObject() -> [String: Any] {
             return [
                 "deviceID": deviceID,
-                "displayName": displayName,
+                "deviceName": deviceName,
                 "state": state
             ]
         }
@@ -59,7 +59,7 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     }
     
     @objc func stateChanged(){
-        let devices = MPCManager.instance.devices.compactMap({return DeviceJson(deviceID: $0.deviceId, displayName: $0.peerID.displayName, state: $0.state.rawValue)})
+        let devices = MPCManager.instance.devices.compactMap({return DeviceJson(deviceID: $0.deviceId, deviceName: $0.peerID.displayName, state: $0.state.rawValue)})
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
     }
     

@@ -6,7 +6,9 @@ import androidx.annotation.NonNull
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.AdvertisingOptions
 import com.google.android.gms.nearby.connection.DiscoveryOptions
+import com.google.android.gms.nearby.connection.Payload
 import com.google.android.gms.nearby.connection.Strategy
+import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -15,6 +17,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
+import java.nio.charset.StandardCharsets
 
 
 const val SERVICE_ID = "flutter_nearby_connections"
@@ -41,6 +44,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     private lateinit var activity: Activity
     private var binding: ActivityPluginBinding? = null
     private lateinit var callbackUtils: CallbackUtils
+    private val gson = Gson()
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, viewTypeId)
@@ -62,12 +66,10 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
         when (call.method) {
             initNearbyService -> {
                 locationHelper?.requestLocationPermission(result)
-                locationHelper?.requestLocationEnable(result)
-                locationHelper?.requestLocationEnable(result)
             }
             startAdvertisingPeer -> {
                 Log.d("nearby_connections", "startAdvertisingPeer")
-                val userNickName = "nearby_connections_advertising"
+                val userNickName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
                 val advertisingOptions = AdvertisingOptions.Builder().setStrategy(Strategy.P2P_STAR).build()
                 Nearby.getConnectionsClient(activity).startAdvertising(userNickName, SERVICE_ID,
                         callbackUtils.advertConnectionLifecycleCallback, advertisingOptions)
@@ -99,16 +101,22 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             invitePeer -> {
                 Log.d("nearby_connections", "invitePeer")
                 val deviceID = call.argument<Any>("deviceID") as? String?
-                val displayName = call.argument<Any>("displayName") as? String?
+                val displayName = call.argument<Any>("deviceName") as? String?
                 Nearby.getConnectionsClient(activity)
                         .requestConnection(displayName!!, deviceID!!, callbackUtils.discoverConnectionLifecycleCallback)
                         .addOnSuccessListener { result.success(true) }.addOnFailureListener { e -> result.error("Failure", e.message, null) }
             }
             disconnectPeer -> {
                 Log.d("nearby_connections", "disconnectPeer")
-                val deviceID = call.argument<Any>("deviceID") as? String?
-                Nearby.getConnectionsClient(activity).acceptConnection(deviceID!!, callbackUtils.payloadCallback)
+                val deviceID = call.arguments as? String?
+                Nearby.getConnectionsClient(activity).rejectConnection(deviceID!!)
                         .addOnSuccessListener { result.success(true) }.addOnFailureListener { e -> result.error("Failure", e.message, null) }
+            }
+            sendMessage ->{
+                Log.d("nearby_connections", "sendMessage")
+                val data = call.arguments as? String?
+                val message = gson.fromJson<MessageJson>(data, MessageJson::class.java)
+                Nearby.getConnectionsClient(activity).sendPayload(message.deviceID, Payload.fromBytes(message.message.toByteArray()))
             }
         }
     }

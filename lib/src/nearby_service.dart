@@ -43,6 +43,7 @@ class NearbyService {
     _channel.invokeMethod(_initNearbyService, serviceType);
     // ignore: missing_return
     _channel.setMethodCallHandler((call) {
+      print("method: ${call.method} | arguments: ${call.arguments}");
       switch (call.method) {
         case _invokeChangeStateMethod:
           List<Device> devices = jsonDecode(call.arguments)
@@ -86,8 +87,19 @@ class NearbyService {
 
   /// Invites a discovered peer to join a nearby connections session.
   /// the [deviceID] is current Device
-  FutureOr<void> invitePeer({@required String deviceID}) {
-    _channel.invokeMethod(_invitePeer, deviceID);
+  FutureOr<void> invitePeer(
+      {@required String deviceID, @required String deviceName}) {
+    if (Platform.isAndroid) {
+      _channel.invokeMethod(
+        _invitePeer,
+        <String, dynamic>{
+          'deviceName': deviceName,
+          'deviceID': deviceID,
+        },
+      );
+    } else if (Platform.isIOS) {
+      _channel.invokeMethod(_invitePeer, deviceID);
+    }
   }
 
   /// Disconnects the local peer from the session.
@@ -97,7 +109,9 @@ class NearbyService {
   }
 
   /// Sends a message encapsulated in a Data instance to nearby peers.
-  FutureOr<void> sendMessage(String deviceID, Map<String, dynamic> argument) {
+  FutureOr<void> sendMessage(String deviceID, String message) {
+    final argument = <String, dynamic>{};
+    argument["message"] = message;
     argument['device_id'] = deviceID;
     _channel.invokeMethod(_sendMessage, jsonEncode(argument));
   }
