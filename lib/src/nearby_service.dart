@@ -25,7 +25,8 @@ class NearbyService {
 
   final _stateChangedController = StreamController<List<Device>>.broadcast();
 
-  Stream<List<Device>> get _stateChangedStream => _stateChangedController.stream;
+  Stream<List<Device>> get _stateChangedStream =>
+      _stateChangedController.stream;
 
   final _dataReceivedController = StreamController<dynamic>.broadcast();
 
@@ -38,15 +39,24 @@ class NearbyService {
   /// and Bluetooth personal area networks for the underlying transport.
   /// param [serviceType] max length 15 character
   /// param [deviceId] is unique, you should use the UDID for [deviceId]
-  NearbyService({@required String serviceType, @required String deviceId})
-      : assert(serviceType.length <= 15 &&
-            serviceType != null &&
-            serviceType.isNotEmpty) {
+  NearbyService({
+    @required String serviceType,
+    @required String deviceId,
+    String deviceName,
+  }) : assert(
+          serviceType.length <= 15 &&
+              serviceType != null &&
+              serviceType.isNotEmpty &&
+              deviceId != null &&
+              deviceName.isNotEmpty,
+        ) {
+
     _channel.invokeMethod(
       _initNearbyService,
       <String, dynamic>{
-        'serviceType': serviceType,
         'deviceId': deviceId,
+        'deviceName': deviceName ?? "",
+        'serviceType': serviceType,
       },
     );
     // ignore: missing_return
