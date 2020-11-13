@@ -25,8 +25,7 @@ class NearbyService {
 
   final _stateChangedController = StreamController<List<Device>>.broadcast();
 
-  Stream<List<Device>> get _stateChangedStream =>
-      _stateChangedController.stream;
+  Stream<List<Device>> get _stateChangedStream => _stateChangedController.stream;
 
   final _dataReceivedController = StreamController<dynamic>.broadcast();
 
@@ -38,21 +37,31 @@ class NearbyService {
   /// In iOS, the framework uses infrastructure Wi-Fi networks, peer-to-peer Wi-Fi,
   /// and Bluetooth personal area networks for the underlying transport.
   /// param [serviceType] max length 15 character
-  NearbyService({@required String serviceType})
-      : assert(serviceType.length <= 15) {
-    _channel.invokeMethod(_initNearbyService, serviceType);
+  /// param [deviceId] is unique, you should use the UDID for [deviceId]
+  NearbyService({@required String serviceType, @required String deviceId})
+      : assert(serviceType.length <= 15 &&
+            serviceType != null &&
+            serviceType.isNotEmpty) {
+    _channel.invokeMethod(
+      _initNearbyService,
+      <String, dynamic>{
+        'serviceType': serviceType,
+        'deviceId': deviceId,
+      },
+    );
     // ignore: missing_return
-    _channel.setMethodCallHandler((call) {
-      print("method: ${call.method} | arguments: ${call.arguments}");
-      switch (call.method) {
+    _channel.setMethodCallHandler((handler) {
+      debugPrint("method: ${handler.method} | arguments: ${handler.arguments}");
+      switch (handler.method) {
         case _invokeChangeStateMethod:
-          List<Device> devices = jsonDecode(call.arguments)
+          List<Device> devices = jsonDecode(handler.arguments)
               .map<Device>((dynamic device) => Device.fromJson(device))
               .toList();
           _stateChangedController.add(devices);
           break;
         case _invokeMessageReceiveMethod:
-          _dataReceivedController.add(jsonDecode(call.arguments));
+          Map<dynamic, dynamic> args = handler.arguments;
+          _dataReceivedController.add(args);
           break;
       }
     });
@@ -89,31 +98,29 @@ class NearbyService {
   /// the [deviceID] is current Device
   FutureOr<void> invitePeer(
       {@required String deviceID, @required String deviceName}) {
-    if (Platform.isAndroid) {
-      _channel.invokeMethod(
-        _invitePeer,
-        <String, dynamic>{
-          'deviceName': deviceName,
-          'deviceID': deviceID,
-        },
-      );
-    } else if (Platform.isIOS) {
-      _channel.invokeMethod(_invitePeer, deviceID);
-    }
+    _channel.invokeMethod(
+      _invitePeer,
+      <String, dynamic>{
+        'deviceId': deviceID,
+        'deviceName': deviceName,
+      },
+    );
   }
 
   /// Disconnects the local peer from the session.
   /// the [deviceID] is current Device
   FutureOr<void> disconnectPeer({@required String deviceID}) {
-    _channel.invokeMethod(_disconnectPeer, deviceID);
+    _channel.invokeMethod(_disconnectPeer, <String, dynamic>{
+      'deviceId': deviceID,
+    });
   }
 
   /// Sends a message encapsulated in a Data instance to nearby peers.
   FutureOr<void> sendMessage(String deviceID, String message) {
-    final argument = <String, dynamic>{};
-    argument["message"] = message;
-    argument['device_id'] = deviceID;
-    _channel.invokeMethod(_sendMessage, jsonEncode(argument));
+    _channel.invokeMethod(_sendMessage, <String, dynamic>{
+      'deviceId': deviceID,
+      'message': message,
+    });
   }
 
   /// [stateChangedSubscription] helps you listen to the changes of peers with

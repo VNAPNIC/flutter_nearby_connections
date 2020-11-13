@@ -116,8 +116,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       });
     });
 
-    receivedDataSubscription =
-        nearbyService.dataReceivedSubscription(callback: (data) {
+    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
       Fluttertoast.showToast(msg: jsonEncode(data));
     });
 
