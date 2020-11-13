@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 
+import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
 import 'package:fluttertoast/fluttertoast.dart';
@@ -91,42 +93,31 @@ class DevicesListScreen extends StatefulWidget {
   _DevicesListScreenState createState() => _DevicesListScreenState();
 }
 
+
+Future<String> _getId() async {
+  var deviceInfo = DeviceInfoPlugin();
+  if (Platform.isIOS) { // import 'dart:io'
+    var iosDeviceInfo = await deviceInfo.iosInfo;
+    return iosDeviceInfo.identifierForVendor; // unique ID on iOS
+  } else {
+    var androidDeviceInfo = await deviceInfo.androidInfo;
+    return androidDeviceInfo.androidId; // unique ID on Android
+  }
+}
+
 class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> devices = [];
   List<Device> connectedDevices = [];
-  final nearbyService = NearbyService(serviceType: 'mp-connection');
+  NearbyService nearbyService;
   StreamSubscription subscription;
   StreamSubscription receivedDataSubscription;
+
+  bool isInit = false;
 
   @override
   void initState() {
     super.initState();
-
-    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
-      devicesList?.forEach((element) {
-        print(" deviceID: ${element.deviceID} | deviceName: ${element.deviceName} | state: ${element.state}");
-      });
-      setState(() {
-        devices.clear();
-        devices.addAll(devicesList);
-        connectedDevices.clear();
-        connectedDevices.addAll(devicesList
-            .where((d) => d.state == SessionState.connected)
-            .toList());
-      });
-    });
-
-    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
-      Fluttertoast.showToast(msg: jsonEncode(data));
-    });
-
-    if (widget.deviceType == DeviceType.browser) {
-      nearbyService.startBrowsingForPeers();
-    } else {
-      nearbyService.startAdvertisingPeer();
-      nearbyService.startBrowsingForPeers();
-    }
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {});
+    init();
   }
 
   @override
@@ -145,7 +136,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         title: Text(widget.deviceType.toString().substring(11).toUpperCase()),
       ),
       backgroundColor: Colors.white,
-      body: ListView.builder(
+      body: isInit? ListView.builder(
           itemCount: getItemCount(),
           itemBuilder: (context, index) {
             final device = widget.deviceType == DeviceType.advertiser
@@ -202,7 +193,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 ],
               ),
             );
-          }),
+          }) : Container(),
     );
   }
 
@@ -299,5 +290,39 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       case SessionState.connecting:
         break;
     }
+  }
+
+  void init()async {
+    String deviceId = await _getId();
+    nearbyService = NearbyService(serviceType: 'mp-connection', deviceId: deviceId);
+    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
+      devicesList?.forEach((element) {
+        print(" deviceID: ${element.deviceID} | deviceName: ${element.deviceName} | state: ${element.state}");
+      });
+      setState(() {
+        devices.clear();
+        devices.addAll(devicesList);
+        connectedDevices.clear();
+        connectedDevices.addAll(devicesList
+            .where((d) => d.state == SessionState.connected)
+            .toList());
+      });
+    });
+
+    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
+      Fluttertoast.showToast(msg: jsonEncode(data));
+    });
+    isInit = true;
+    setState(() {
+      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+        if()
+        if (widget.deviceType == DeviceType.browser) {
+          nearbyService.startBrowsingForPeers();
+        } else {
+          nearbyService.startAdvertisingPeer();
+          nearbyService.startBrowsingForPeers();
+        }
+      });
+    });
   }
 }

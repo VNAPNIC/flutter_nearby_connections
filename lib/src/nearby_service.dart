@@ -48,7 +48,7 @@ class NearbyService {
               serviceType != null &&
               serviceType.isNotEmpty &&
               deviceId != null &&
-              deviceName.isNotEmpty,
+              deviceId.isNotEmpty,
         ) {
 
     _channel.invokeMethod(
