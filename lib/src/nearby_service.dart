@@ -70,8 +70,8 @@ class NearbyService {
           _stateChangedController.add(devices);
           break;
         case _invokeMessageReceiveMethod:
-          Map<dynamic, dynamic> args = handler.arguments;
-          _dataReceivedController.add(args);
+          _dataReceivedController.add(handler.arguments);
+          debugPrint("_invokeMessageReceiveMethod | arguments: ${handler.arguments}");
           break;
       }
     });
