@@ -8,7 +8,6 @@ import com.google.android.gms.nearby.connection.AdvertisingOptions
 import com.google.android.gms.nearby.connection.DiscoveryOptions
 import com.google.android.gms.nearby.connection.Payload
 import com.google.android.gms.nearby.connection.Strategy
-import com.google.gson.Gson
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -17,8 +16,6 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
-import java.nio.charset.StandardCharsets
-
 
 const val SERVICE_ID = "flutter_nearby_connections"
 
@@ -44,12 +41,13 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     private lateinit var activity: Activity
     private var binding: ActivityPluginBinding? = null
     private lateinit var callbackUtils: CallbackUtils
-    private val gson = Gson()
+
+    private lateinit var localDeviceId: String
+    private lateinit var localDeviceName: String
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, viewTypeId)
         channel.setMethodCallHandler(this)
-        callbackUtils = CallbackUtils(channel)
     }
 
     companion object {
@@ -65,13 +63,18 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             initNearbyService -> {
+                callbackUtils = CallbackUtils(channel, activity)
+                localDeviceId = call.argument<String>("deviceId")!!
+                localDeviceName = if (call.argument<String>("deviceName").isNullOrEmpty())
+                    android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
+                else
+                    call.argument<String>("deviceName")!!
                 locationHelper?.requestLocationPermission(result)
             }
             startAdvertisingPeer -> {
                 Log.d("nearby_connections", "startAdvertisingPeer")
-                val userNickName = android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
                 val advertisingOptions = AdvertisingOptions.Builder().setStrategy(Strategy.P2P_STAR).build()
-                Nearby.getConnectionsClient(activity).startAdvertising(userNickName, SERVICE_ID,
+                Nearby.getConnectionsClient(activity).startAdvertising(localDeviceName, SERVICE_ID,
                         callbackUtils.advertConnectionLifecycleCallback, advertisingOptions)
                         .addOnSuccessListener {
                             Log.d("nearby_connections", "startAdvertising")
@@ -100,23 +103,23 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             }
             invitePeer -> {
                 Log.d("nearby_connections", "invitePeer")
-                val deviceID = call.argument<Any>("deviceID") as? String?
-                val displayName = call.argument<Any>("deviceName") as? String?
+                val deviceId = call.argument<String>("deviceId")
+                val displayName = call.argument<String>("deviceName")
                 Nearby.getConnectionsClient(activity)
-                        .requestConnection(displayName!!, deviceID!!, callbackUtils.discoverConnectionLifecycleCallback)
+                        .requestConnection(displayName!!, deviceId!!, callbackUtils.discoverConnectionLifecycleCallback)
                         .addOnSuccessListener { result.success(true) }.addOnFailureListener { e -> result.error("Failure", e.message, null) }
             }
             disconnectPeer -> {
                 Log.d("nearby_connections", "disconnectPeer")
-                val deviceID = call.arguments as? String?
-                Nearby.getConnectionsClient(activity).rejectConnection(deviceID!!)
-                        .addOnSuccessListener { result.success(true) }.addOnFailureListener { e -> result.error("Failure", e.message, null) }
+                val deviceId = call.argument<String>("deviceId")
+                Nearby.getConnectionsClient(activity).disconnectFromEndpoint(deviceId!!)
+                callbackUtils.updateStatus(deviceId = deviceId, state = notConnected)
             }
-            sendMessage ->{
+            sendMessage -> {
                 Log.d("nearby_connections", "sendMessage")
-                val data = call.arguments as? String?
-                val message = gson.fromJson<MessageJson>(data, MessageJson::class.java)
-                Nearby.getConnectionsClient(activity).sendPayload(message.deviceID, Payload.fromBytes(message.message.toByteArray()))
+                val deviceId = call.argument<String>("deviceId")
+                val message = call.argument<String>("message")
+                Nearby.getConnectionsClient(activity).sendPayload(deviceId!!, Payload.fromBytes(message!!.toByteArray()))
             }
         }
     }

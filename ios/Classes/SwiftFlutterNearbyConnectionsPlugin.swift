@@ -28,18 +28,18 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
     
-    var currentReceivedDevice: Device? = Device(peerID: MPCManager.instance.localPeerID)
+    var currentReceivedDevice: Device?
     
     let channel: FlutterMethodChannel
     
     struct DeviceJson {
-        var deviceID:String
+        var deviceId:String
         var deviceName:String
         var state:Int
         
         func toStringAnyObject() -> [String: Any] {
             return [
-                "deviceID": deviceID,
+                "deviceId": deviceId,
                 "deviceName": deviceName,
                 "state": state
             ]
@@ -47,31 +47,42 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     }
     
     struct MessageJson {
-        var deviceID:String
+        var deviceId:String
         var message:String
         
         func toStringAnyObject() -> [String: Any] {
             return [
-                "deviceID": deviceID,
+                "deviceId": deviceId,
                 "message": message
             ]
         }
     }
     
     @objc func stateChanged(){
-        let devices = MPCManager.instance.devices.compactMap({return DeviceJson(deviceID: $0.deviceId, deviceName: $0.peerID.displayName, state: $0.state.rawValue)})
+        let devices = MPCManager.instance.devices.compactMap({return DeviceJson(deviceId: $0.deviceId, deviceName: $0.peerID.displayName, state: $0.state.rawValue)})
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
     }
     
     @objc func messageReceived(notification: Notification) {
         do {
             if let data = notification.userInfo?["data"] as? Data, let stringData = JSON(data).rawString() {
-                self.channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD,
-                                          arguments: stringData)
+                let dict = convertToDictionary(text: stringData)
+                self.channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, arguments: dict)
             }
         } catch let e {
             print(e.localizedDescription)
         }
+    }
+    
+    func convertToDictionary(text: String) -> [String: Any]? {
+        if let data = text.data(using: .utf8) {
+            do {
+                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+        return nil
     }
     
     public init(channel:FlutterMethodChannel) {
@@ -90,8 +101,11 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch MethodCall(rawValue: call.method) {
         case .initNearbyService:
-            let serviceType:String = call.arguments as? String ?? SERVICE_TYPE
-            MPCManager.instance.setup(serviceType: serviceType)
+            let data = call.arguments  as! Dictionary<String, AnyObject>
+            let serviceType:String = data["serviceType"] as? String ?? SERVICE_TYPE
+            let deviceId:String = data["deviceId"] as? String ?? ""
+            MPCManager.instance.setup(serviceType: serviceType, deviceId: deviceId)
+            currentReceivedDevice = Device(peerID: MPCManager.instance.localPeerID, deviceId: MPCManager.instance.localDeviceId)
         case .startAdvertisingPeer:
             MPCManager.instance.startAdvertisingPeer()
         case .startBrowsingForPeers:
@@ -101,22 +115,24 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         case .stopBrowsingForPeers:
             MPCManager.instance.stopBrowsingForPeers()
         case .invitePeer:
-            let deviceID:String? = call.arguments as? String ?? nil
-            if(deviceID != nil){
-                MPCManager.instance.invitePeer(deviceID: deviceID!)
+            let data = call.arguments  as! Dictionary<String, AnyObject>
+            let deviceId:String? = data["deviceId"] as? String ?? nil
+            if (deviceId != nil) {
+                MPCManager.instance.invitePeer(deviceID: deviceId)
             }
         case .disconnectPeer:
-            let deviceID:String? = call.arguments as? String ?? nil
-            if(deviceID != nil){
-                MPCManager.instance.disconnectPeer(deviceID: deviceID!)
+         let data = call.arguments  as! Dictionary<String, AnyObject>
+            let deviceId:String? = data["deviceId"] as? String ?? nil
+            if (deviceId != nil) {
+                MPCManager.instance.disconnectPeer(deviceID: deviceId!)
             }
         case .sendMessage:
-            guard let jsonData = call.arguments as? String, let data = jsonData.data(using: String.Encoding.utf8) else {fatalError()}
+            let dict = call.arguments as! Dictionary<String, AnyObject>
             do {
-                let json = JSON(data)
-                if let device = MPCManager.instance.device(for: json["device_id"].stringValue) {
+                let jsonData = try JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
+                if let device = MPCManager.instance.device(for: dict["deviceId"] as! String) {
                     currentReceivedDevice = device
-                    try device.send(data: data)
+                    try device.send(data: jsonData)
                 }
             } catch let error as NSError {
                 print(error)

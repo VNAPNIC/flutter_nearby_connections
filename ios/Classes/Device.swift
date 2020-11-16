@@ -1,6 +1,7 @@
 import Foundation
 import MultipeerConnectivity
 import SwiftyJSON
+
 class Device: NSObject {
     let peerID: MCPeerID
     var session: MCSession?
@@ -10,8 +11,8 @@ class Device: NSObject {
     
     static let messageReceivedNotification = Notification.Name("DeviceDidReceiveMessage")
     
-    init(peerID: MCPeerID) {
-        self.deviceId = peerID.displayName + UUID().uuidString
+    init(peerID: MCPeerID, deviceId: String) {
+        self.deviceId = deviceId
         self.peerID = peerID
         super.init()
     }
