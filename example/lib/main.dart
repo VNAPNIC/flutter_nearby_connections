@@ -93,10 +93,10 @@ class DevicesListScreen extends StatefulWidget {
   _DevicesListScreenState createState() => _DevicesListScreenState();
 }
 
-
 Future<String> _getId() async {
   var deviceInfo = DeviceInfoPlugin();
-  if (Platform.isIOS) { // import 'dart:io'
+  if (Platform.isIOS) {
+    // import 'dart:io'
     var iosDeviceInfo = await deviceInfo.iosInfo;
     return iosDeviceInfo.identifierForVendor; // unique ID on iOS
   } else {
@@ -132,70 +132,69 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Text(widget.deviceType.toString().substring(11).toUpperCase()),
-      ),
-      backgroundColor: Colors.white,
-      body: isInit? ListView.builder(
-          itemCount: getItemCount(),
-          itemBuilder: (context, index) {
-            final device = widget.deviceType == DeviceType.advertiser
-                ? connectedDevices[index]
-                : devices[index];
-            return Container(
-              margin: EdgeInsets.all(8.0),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      Expanded(
-                          child: GestureDetector(
-                        onTap: () => _onTabItemListener(device),
-                        child: Column(
-                          children: [
-                            Text(device.deviceName),
-                            Text(
-                              getStateName(device.state),
-                              style:
-                                  TextStyle(color: getStateColor(device.state)),
-                            ),
-                          ],
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                        ),
-                      )),
-                      // Request connect
-                      GestureDetector(
-                        onTap: () => _onButtonClicked(device),
-                        child: Container(
-                          margin: EdgeInsets.symmetric(horizontal: 8.0),
-                          padding: EdgeInsets.all(8.0),
-                          height: 35,
-                          width: 100,
-                          color: getButtonColor(device.state),
-                          child: Center(
-                            child: Text(
-                              getButtonStateName(device.state),
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.bold),
+        appBar: AppBar(
+          title: Text(widget.deviceType.toString().substring(11).toUpperCase()),
+        ),
+        backgroundColor: Colors.white,
+        body: ListView.builder(
+            itemCount: getItemCount(),
+            itemBuilder: (context, index) {
+              final device = widget.deviceType == DeviceType.advertiser
+                  ? connectedDevices[index]
+                  : devices[index];
+              return Container(
+                margin: EdgeInsets.all(8.0),
+                child: Column(
+                  children: [
+                    Row(
+                      children: [
+                        Expanded(
+                            child: GestureDetector(
+                          onTap: () => _onTabItemListener(device),
+                          child: Column(
+                            children: [
+                              Text(device.deviceName),
+                              Text(
+                                getStateName(device.state),
+                                style: TextStyle(
+                                    color: getStateColor(device.state)),
+                              ),
+                            ],
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                          ),
+                        )),
+                        // Request connect
+                        GestureDetector(
+                          onTap: () => _onButtonClicked(device),
+                          child: Container(
+                            margin: EdgeInsets.symmetric(horizontal: 8.0),
+                            padding: EdgeInsets.all(8.0),
+                            height: 35,
+                            width: 100,
+                            color: getButtonColor(device.state),
+                            child: Center(
+                              child: Text(
+                                getButtonStateName(device.state),
+                                style: TextStyle(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold),
+                              ),
                             ),
                           ),
-                        ),
-                      )
-                    ],
-                  ),
-                  SizedBox(
-                    height: 8.0,
-                  ),
-                  Divider(
-                    height: 1,
-                    color: Colors.grey,
-                  )
-                ],
-              ),
-            );
-          }) : Container(),
-    );
+                        )
+                      ],
+                    ),
+                    SizedBox(
+                      height: 8.0,
+                    ),
+                    Divider(
+                      height: 1,
+                      color: Colors.grey,
+                    )
+                  ],
+                ),
+              );
+            }));
   }
 
   String getStateName(SessionState state) {
@@ -259,7 +258,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 FlatButton(
                   child: Text("Send"),
                   onPressed: () {
-                    nearbyService.sendMessage(device.deviceId, myController.text);
+                    nearbyService.sendMessage(
+                        device.deviceId, myController.text);
                     myController.text = '';
                   },
                 )
@@ -293,12 +293,15 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     }
   }
 
-  void init()async {
+  void init() async {
     String deviceId = await _getId();
-    nearbyService = NearbyService(serviceType: 'mp-connection', deviceId: deviceId);
-    subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
+    nearbyService = NearbyService();
+    await nearbyService.init(serviceType: 'mp-connection', deviceId: deviceId);
+    subscription =
+        nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList?.forEach((element) {
-        print(" deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
+        print(
+            " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
       });
       setState(() {
         devices.clear();
@@ -310,20 +313,18 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
       });
     });
 
-    receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
+    receivedDataSubscription =
+        nearbyService.dataReceivedSubscription(callback: (data) {
       print("dataReceivedSubscription: ${jsonEncode(data)}");
       Fluttertoast.showToast(msg: jsonEncode(data));
     });
-    isInit = true;
-    setState(() {
-      WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        if (widget.deviceType == DeviceType.browser) {
-          nearbyService.startBrowsingForPeers();
-        } else {
-          nearbyService.startAdvertisingPeer();
-          nearbyService.startBrowsingForPeers();
-        }
-      });
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      if (widget.deviceType == DeviceType.browser) {
+        nearbyService.startBrowsingForPeers();
+      } else {
+        nearbyService.startAdvertisingPeer();
+        nearbyService.startBrowsingForPeers();
+      }
     });
   }
 }
