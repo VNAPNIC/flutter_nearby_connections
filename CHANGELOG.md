@@ -1,3 +1,7 @@
+## 1.0.0
+
+* Support Android
+
 ## 0.0.5
 
 * Reformat code
