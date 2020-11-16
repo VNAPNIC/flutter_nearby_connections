@@ -19,6 +19,8 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
     private fun device(deviceId: String): DeviceJson? = devices.find { element -> element.deviceID == deviceId }
     fun updateStatus(deviceId: String, state: Int) {
         devices.find { element -> element.deviceID == deviceId }?.state = state
+        val json = gson.toJson(devices)
+        channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, json)
     }
 
     fun addDevice(device: DeviceJson) {
