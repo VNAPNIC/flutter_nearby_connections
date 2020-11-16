@@ -66,12 +66,23 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     @objc func messageReceived(notification: Notification) {
         do {
             if let data = notification.userInfo?["data"] as? Data, let stringData = JSON(data).rawString() {
-                self.channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD,
-                                          arguments: stringData)
+                let dict = convertToDictionary(text: stringData)
+                self.channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, arguments: dict)
             }
         } catch let e {
             print(e.localizedDescription)
         }
+    }
+    
+    func convertToDictionary(text: String) -> [String: Any]? {
+        if let data = text.data(using: .utf8) {
+            do {
+                return try JSONSerialization.jsonObject(with: data, options: []) as? [String: Any]
+            } catch {
+                print(error.localizedDescription)
+            }
+        }
+        return nil
     }
     
     public init(channel:FlutterMethodChannel) {
@@ -105,22 +116,23 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
             MPCManager.instance.stopBrowsingForPeers()
         case .invitePeer:
             let data = call.arguments  as! Dictionary<String, AnyObject>
-            let deviceId:String = data["deviceId"] as? String ?? ""
-            if(!deviceId.isEmpty){
+            let deviceId:String? = data["deviceId"] as? String ?? nil
+            if (deviceId != nil) {
                 MPCManager.instance.invitePeer(deviceID: deviceId)
             }
         case .disconnectPeer:
-            let deviceId:String? = call.arguments as? String ?? nil
-            if(deviceId != nil){
+         let data = call.arguments  as! Dictionary<String, AnyObject>
+            let deviceId:String? = data["deviceId"] as? String ?? nil
+            if (deviceId != nil) {
                 MPCManager.instance.disconnectPeer(deviceID: deviceId!)
             }
         case .sendMessage:
-            guard let jsonData = call.arguments as? String, let data = jsonData.data(using: String.Encoding.utf8) else {fatalError()}
+            let dict = call.arguments as! Dictionary<String, AnyObject>
             do {
-                let json = JSON(data)
-                if let device = MPCManager.instance.device(for: json["deviceId"].stringValue) {
+                let jsonData = try JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
+                if let device = MPCManager.instance.device(for: dict["deviceId"] as! String) {
                     currentReceivedDevice = device
-                    try device.send(data: data)
+                    try device.send(data: jsonData)
                 }
             } catch let error as NSError {
                 print(error)
