@@ -125,7 +125,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     subscription?.cancel();
     receivedDataSubscription?.cancel();
     nearbyService.stopBrowsingForPeers();
-    nearbyService.startAdvertisingPeer();
+    nearbyService.stopAdvertisingPeer();
     super.dispose();
   }
 
@@ -163,6 +163,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                         ),
                       )),
+                      // Request connect
                       GestureDetector(
                         onTap: () => _onButtonClicked(device),
                         child: Container(
@@ -310,12 +311,12 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     });
 
     receivedDataSubscription = nearbyService.dataReceivedSubscription(callback: (data) {
+      print("dataReceivedSubscription: ${jsonEncode(data)}");
       Fluttertoast.showToast(msg: jsonEncode(data));
     });
     isInit = true;
     setState(() {
       WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-        if()
         if (widget.deviceType == DeviceType.browser) {
           nearbyService.startBrowsingForPeers();
         } else {

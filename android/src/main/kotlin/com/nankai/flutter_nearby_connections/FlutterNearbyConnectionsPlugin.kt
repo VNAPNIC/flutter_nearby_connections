@@ -48,7 +48,6 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, viewTypeId)
         channel.setMethodCallHandler(this)
-        callbackUtils = CallbackUtils(channel)
     }
 
     companion object {
@@ -64,6 +63,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             initNearbyService -> {
+                callbackUtils = CallbackUtils(channel, activity)
                 localDeviceId = call.argument<String>("deviceId")!!
                 localDeviceName = if (call.argument<String>("deviceName").isNullOrEmpty())
                     android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
@@ -112,8 +112,8 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             disconnectPeer -> {
                 Log.d("nearby_connections", "disconnectPeer")
                 val deviceId = call.argument<String>("deviceId")
-                Nearby.getConnectionsClient(activity).rejectConnection(deviceId!!)
-                        .addOnSuccessListener { result.success(true) }.addOnFailureListener { e -> result.error("Failure", e.message, null) }
+                Nearby.getConnectionsClient(activity).disconnectFromEndpoint(deviceId!!)
+                callbackUtils.updateStatus(deviceId = deviceId, state = notConnected)
             }
             sendMessage -> {
                 Log.d("nearby_connections", "sendMessage")
