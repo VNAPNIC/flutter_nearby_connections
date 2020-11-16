@@ -12,10 +12,10 @@ enum SessionState {
   connected
 }
 
-/// The class [Device] provides a peer information including [Device.deviceID], [Device.deviceName], [Device.state]
+/// The class [Device] provides a peer information including [Device.deviceId], [Device.deviceName], [Device.state]
 class Device {
   /// Peer ID
-  String deviceID;
+  String deviceId;
 
   /// Peer name
   String deviceName;
@@ -24,7 +24,7 @@ class Device {
   /// See [SessionState]
   SessionState state = SessionState.notConnected;
 
-  Device(this.deviceID, this.deviceName, int state) {
+  Device(this.deviceId, this.deviceName, int state) {
     switch (state) {
       case 1:
         this.state = SessionState.connecting;
@@ -39,6 +39,6 @@ class Device {
   }
 
   factory Device.fromJson(json) {
-    return Device(json["deviceID"], json["deviceName"], json["state"]);
+    return Device(json["deviceId"], json["deviceName"], json["state"]);
   }
 }

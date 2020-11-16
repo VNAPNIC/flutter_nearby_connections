@@ -259,7 +259,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
                 FlatButton(
                   child: Text("Send"),
                   onPressed: () {
-                    nearbyService.sendMessage(device.deviceID, myController.text);
+                    nearbyService.sendMessage(device.deviceId, myController.text);
                     myController.text = '';
                   },
                 )
@@ -281,12 +281,12 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     switch (device.state) {
       case SessionState.notConnected:
         nearbyService.invitePeer(
-          deviceID: device.deviceID,
+          deviceID: device.deviceId,
           deviceName: device.deviceName,
         );
         break;
       case SessionState.connected:
-        nearbyService.disconnectPeer(deviceID: device.deviceID);
+        nearbyService.disconnectPeer(deviceID: device.deviceId);
         break;
       case SessionState.connecting:
         break;
@@ -298,7 +298,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     nearbyService = NearbyService(serviceType: 'mp-connection', deviceId: deviceId);
     subscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList?.forEach((element) {
-        print(" deviceID: ${element.deviceID} | deviceName: ${element.deviceName} | state: ${element.state}");
+        print(" deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
       });
       setState(() {
         devices.clear();
