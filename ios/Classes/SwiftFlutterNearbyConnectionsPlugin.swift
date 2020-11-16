@@ -28,7 +28,7 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         registrar.addMethodCallDelegate(instance, channel: channel)
     }
     
-    var currentReceivedDevice: Device? = Device(peerID: MPCManager.instance.localPeerID)
+    var currentReceivedDevice: Device?
     
     let channel: FlutterMethodChannel
     
@@ -90,8 +90,11 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch MethodCall(rawValue: call.method) {
         case .initNearbyService:
-            let serviceType:String = call.arguments as? String ?? SERVICE_TYPE
-            MPCManager.instance.setup(serviceType: serviceType)
+            let data = call.arguments  as! Dictionary<String, AnyObject>
+            let serviceType:String = data["serviceType"] as? String ?? SERVICE_TYPE
+            let deviceId:String = data["deviceId"] as? String ?? ""
+            MPCManager.instance.setup(serviceType: serviceType, deviceId: deviceId)
+            currentReceivedDevice = Device(peerID: MPCManager.instance.localPeerID, deviceId: MPCManager.instance.localDeviceId)
         case .startAdvertisingPeer:
             MPCManager.instance.startAdvertisingPeer()
         case .startBrowsingForPeers:
@@ -101,14 +104,15 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         case .stopBrowsingForPeers:
             MPCManager.instance.stopBrowsingForPeers()
         case .invitePeer:
-            let deviceId:String? = call.arguments as? String ?? nil
-            if(deviceId != nil){
-                MPCManager.instance.invitePeer(deviceId: deviceId!)
+            let data = call.arguments  as! Dictionary<String, AnyObject>
+            let deviceId:String = data["deviceId"] as? String ?? ""
+            if(!deviceId.isEmpty){
+                MPCManager.instance.invitePeer(deviceID: deviceId)
             }
         case .disconnectPeer:
             let deviceId:String? = call.arguments as? String ?? nil
             if(deviceId != nil){
-                MPCManager.instance.disconnectPeer(deviceId: deviceId!)
+                MPCManager.instance.disconnectPeer(deviceID: deviceId!)
             }
         case .sendMessage:
             guard let jsonData = call.arguments as? String, let data = jsonData.data(using: String.Encoding.utf8) else {fatalError()}

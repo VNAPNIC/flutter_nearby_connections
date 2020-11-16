@@ -20,6 +20,7 @@ class MPCManager: NSObject {
     static let instance = MPCManager()
     
     var localPeerID: MCPeerID!
+    var localDeviceId : String!
     var enterbackgroundNotification: NSObjectProtocol!
     var devices: [Device] = [] {
         didSet {
@@ -47,7 +48,8 @@ class MPCManager: NSObject {
         }
     }
     
-    func setup(serviceType: String){
+    func setup(serviceType: String, deviceId: String) {
+        localDeviceId = deviceId
         self.advertiser = MCNearbyServiceAdvertiser(peer: localPeerID, discoveryInfo: nil, serviceType: serviceType)
         self.advertiser.delegate = self
         
@@ -121,7 +123,7 @@ class MPCManager: NSObject {
         if let device = devices.first(where: {$0.peerID == id}) {
             return device
         } else {
-            let device = Device(peerID: id)
+            let device = Device(peerID: id, deviceId: localDeviceId)
             self.devices.append(device)
             return device
         }
