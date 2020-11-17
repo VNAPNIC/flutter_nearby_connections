@@ -118,7 +118,7 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
             let data = call.arguments  as! Dictionary<String, AnyObject>
             let deviceId:String? = data["deviceId"] as? String ?? nil
             if (deviceId != nil) {
-                MPCManager.instance.invitePeer(deviceID: deviceId)
+                MPCManager.instance.invitePeer(deviceID: deviceId!)
             }
         case .disconnectPeer:
          let data = call.arguments  as! Dictionary<String, AnyObject>
