@@ -1,3 +1,7 @@
+## 1.0.1
+
+* Fix Value of optional type String? (deviceId) must be unwrapped
+
 ## 1.0.0
 
 * Support Android
