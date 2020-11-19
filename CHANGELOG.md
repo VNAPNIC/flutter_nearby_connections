@@ -1,3 +1,7 @@
+## 1.0.3
+
+* Fix connect wifi on the Android OS
+
 ## 1.0.2
 
 * Support Strategy for android OS
