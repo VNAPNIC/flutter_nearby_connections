@@ -70,10 +70,10 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                     android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
                 else
                     call.argument<String>("deviceName")!!
-                strategy = when (call.argument<Int>("strategy")){
-                    0-> Strategy.P2P_CLUSTER
-                    1-> Strategy.P2P_STAR
-                   else -> Strategy.P2P_POINT_TO_POINT
+                strategy = when (call.argument<Int>("strategy")) {
+                    0 -> Strategy.P2P_CLUSTER
+                    1 -> Strategy.P2P_STAR
+                    else -> Strategy.P2P_POINT_TO_POINT
                 }
                 locationHelper?.requestLocationPermission(result)
             }
@@ -81,7 +81,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 Log.d("nearby_connections", "startAdvertisingPeer")
                 val advertisingOptions = AdvertisingOptions.Builder().setStrategy(strategy).build()
                 Nearby.getConnectionsClient(activity).startAdvertising(localDeviceName, SERVICE_ID,
-                        callbackUtils.advertConnectionLifecycleCallback, advertisingOptions)
+                        callbackUtils.connectionLifecycleCallback, advertisingOptions)
                         .addOnSuccessListener {
                             Log.d("nearby_connections", "startAdvertising")
                             result.success(true)
@@ -100,32 +100,36 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             stopAdvertisingPeer -> {
                 Log.d("nearby_connections", "stopAdvertisingPeer")
                 Nearby.getConnectionsClient(activity).stopAdvertising()
-                result.success(null)
+                result.success(true)
             }
             stopBrowsingForPeers -> {
                 Log.d("nearby_connections", "stopDiscovery")
                 Nearby.getConnectionsClient(activity).stopDiscovery()
-                result.success(null)
+                result.success(true)
             }
             invitePeer -> {
                 Log.d("nearby_connections", "invitePeer")
                 val deviceId = call.argument<String>("deviceId")
                 val displayName = call.argument<String>("deviceName")
                 Nearby.getConnectionsClient(activity)
-                        .requestConnection(displayName!!, deviceId!!, callbackUtils.discoverConnectionLifecycleCallback)
-                        .addOnSuccessListener { result.success(true) }.addOnFailureListener { e -> result.error("Failure", e.message, null) }
+                        .requestConnection(displayName!!, deviceId!!, callbackUtils.connectionLifecycleCallback)
+                        .addOnSuccessListener { result.success(true) }
+                        .addOnFailureListener { e -> result.error("Failure", e.message, null) }
             }
             disconnectPeer -> {
                 Log.d("nearby_connections", "disconnectPeer")
                 val deviceId = call.argument<String>("deviceId")
                 Nearby.getConnectionsClient(activity).disconnectFromEndpoint(deviceId!!)
                 callbackUtils.updateStatus(deviceId = deviceId, state = notConnected)
+                result.success(true)
             }
             sendMessage -> {
                 Log.d("nearby_connections", "sendMessage")
                 val deviceId = call.argument<String>("deviceId")
                 val message = call.argument<String>("message")
-                Nearby.getConnectionsClient(activity).sendPayload(deviceId!!, Payload.fromBytes(message!!.toByteArray()))
+                Nearby.getConnectionsClient(activity).sendPayload(deviceId!!, Payload.fromBytes(message!!.toByteArray())).addOnCompleteListener {
+                    result.success(true)
+                }
             }
         }
     }

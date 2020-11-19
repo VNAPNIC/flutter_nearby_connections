@@ -33,94 +33,36 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, json)
     }
 
-    fun removeDevice(deviceId: String){
+    fun removeDevice(deviceId: String) {
         devices.remove(device(deviceId))
         val json = gson.toJson(devices)
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, json)
-    }
-
-    val advertConnectionLifecycleCallback: ConnectionLifecycleCallback = object : ConnectionLifecycleCallback() {
-        override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-            Log.d("nearby_connections", "onConnectionInitiated ${connectionInfo.toString()}")
-            val data = DeviceJson(endpointId, connectionInfo.endpointName, connecting)
-            addDevice(data)
-            acceptConnection(endpointId)
-        }
-
-        override fun onConnectionResult(endpointId: String, connectionResolution: ConnectionResolution) {
-            Log.d("nearby_connections", "onConnectionResult $endpointId")
-            val data = DeviceJson(endpointId,
-                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
-                    when (connectionResolution.status.statusCode) {
-                        ConnectionsStatusCodes.STATUS_OK -> connected
-                        ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> notConnected
-                        ConnectionsStatusCodes.STATUS_ERROR -> notConnected
-                        else -> notConnected
-                    })
-            addDevice(data)
-        }
-
-        override fun onDisconnected(endpointId: String) {
-            Log.d("nearby_connections", "onDisconnected $endpointId")
-            val data = DeviceJson(endpointId,
-                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
-                    notConnected)
-            addDevice(data)
-        }
     }
 
     val endpointDiscoveryCallback: EndpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String,
                                      discoveredEndpointInfo: DiscoveredEndpointInfo) {
             Log.d("nearby_connections", "onEndpointFound ${discoveredEndpointInfo.toString()}")
-            val data = DeviceJson(endpointId, discoveredEndpointInfo.endpointName, notConnected)
-            addDevice(data)
+            if(!deviceExists(endpointId)) {
+                val data = DeviceJson(endpointId, discoveredEndpointInfo.endpointName, notConnected)
+                addDevice(data)
+            }
         }
 
         override fun onEndpointLost(endpointId: String) {
             Log.d("nearby_connections", "onEndpointLost $endpointId")
-            if(deviceExists(endpointId)){
+            if (deviceExists(endpointId)) {
                 Nearby.getConnectionsClient(activity).disconnectFromEndpoint(endpointId)
             }
             removeDevice(endpointId)
         }
     }
 
-    val discoverConnectionLifecycleCallback: ConnectionLifecycleCallback = object : ConnectionLifecycleCallback() {
-        override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-            Log.d("nearby_connections", "onConnectionInitiated $endpointId")
-            val data = DeviceJson(endpointId, connectionInfo.endpointName, connecting)
-            addDevice(data)
-            acceptConnection(endpointId)
-        }
-
-        override fun onConnectionResult(endpointId: String, connectionResolution: ConnectionResolution) {
-            Log.d("nearby_connections", "onConnectionResult $endpointId")
-            val data = DeviceJson(endpointId,
-                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
-                    when (connectionResolution.status.statusCode) {
-                        ConnectionsStatusCodes.STATUS_OK -> connected
-                        ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> notConnected
-                        ConnectionsStatusCodes.STATUS_ERROR -> notConnected
-                        else -> notConnected
-                    })
-            addDevice(data)
-        }
-
-        override fun onDisconnected(endpointId: String) {
-            Log.d("nearby_connections", "onDisconnected $endpointId")
-            val data = DeviceJson(endpointId,
-                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
-                    notConnected)
-            addDevice(data)
-        }
-    }
-
     private val payloadCallback: PayloadCallback = object : PayloadCallback() {
         override fun onPayloadReceived(endpointId: String, payload: Payload) {
             Log.d("nearby_connections", "onPayloadReceived $endpointId")
-            val args  =  mutableMapOf("deviceId" to endpointId, "message" to String(payload.asBytes()!!))
-            channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD,args)
+            val args = mutableMapOf("deviceId" to endpointId, "message" to String(payload.asBytes()!!))
+            channel.invokeMethod(INVOKE_MESSAGE_RECEIVE_METHOD, args)
         }
 
         override fun onPayloadTransferUpdate(endpointId: String,
@@ -130,12 +72,35 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
         }
     }
 
-    private fun acceptConnection(endpointId:String){
-        Nearby.getConnectionsClient(activity).acceptConnection(endpointId, payloadCallback)
-                .addOnSuccessListener {
-                    updateStatus(deviceId = endpointId,state = connecting)
-                }.addOnFailureListener {
-                    updateStatus(deviceId = endpointId,state = notConnected)
-                }
+    val connectionLifecycleCallback: ConnectionLifecycleCallback = object : ConnectionLifecycleCallback() {
+        override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
+            Log.d("nearby_connections", "onConnectionInitiated ${connectionInfo.toString()}")
+            val data = DeviceJson(endpointId, connectionInfo.endpointName, connecting)
+            addDevice(data)
+            Nearby.getConnectionsClient(activity).acceptConnection(endpointId, payloadCallback)
+        }
+
+        override fun onConnectionResult(endpointId: String, connectionResolution: ConnectionResolution) {
+            Log.d("nearby_connections", "onConnectionResult $endpointId")
+            val data = DeviceJson(endpointId,
+                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
+                    when (connectionResolution.status.statusCode) {
+                        ConnectionsStatusCodes.STATUS_OK -> connected
+                        ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> notConnected
+                        ConnectionsStatusCodes.STATUS_ERROR -> notConnected
+                        else -> notConnected
+                    })
+            addDevice(data)
+        }
+
+        override fun onDisconnected(endpointId: String) {
+            Log.d("nearby_connections", "onDisconnected $endpointId")
+            if (deviceExists(endpointId)) {
+                updateStatus(endpointId, notConnected)
+            } else {
+                val data = DeviceJson(endpointId, if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!, notConnected)
+                addDevice(data)
+            }
+        }
     }
 }

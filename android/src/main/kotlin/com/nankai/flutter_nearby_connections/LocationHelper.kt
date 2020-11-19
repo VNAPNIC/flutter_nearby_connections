@@ -29,7 +29,11 @@ class LocationHelper(private val activity: Activity) : PluginRegistry.ActivityRe
 
     fun requestLocationPermission(result: Result) {
         this.result = result
-        ActivityCompat.requestPermissions(activity, arrayOf(Manifest.permission.ACCESS_FINE_LOCATION,
+        ActivityCompat.requestPermissions(activity, arrayOf(
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.ACCESS_WIFI_STATE,
+                Manifest.permission.CHANGE_WIFI_STATE,
                 Manifest.permission.ACCESS_COARSE_LOCATION), REQUEST_LOCATION_PERMISSION)
     }
 
