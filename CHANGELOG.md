@@ -1,3 +1,7 @@
+## 1.0.2
+
+* Support Strategy for android OS
+
 ## 1.0.1
 
 * Fix Value of optional type String? (deviceId) must be unwrapped
