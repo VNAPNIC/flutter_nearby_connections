@@ -44,6 +44,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
 
     private lateinit var localDeviceId: String
     private lateinit var localDeviceName: String
+    private lateinit var strategy: Strategy
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, viewTypeId)
@@ -69,11 +70,16 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                     android.os.Build.MANUFACTURER + " " + android.os.Build.MODEL
                 else
                     call.argument<String>("deviceName")!!
+                strategy = when (call.argument<Int>("strategy")){
+                    0-> Strategy.P2P_CLUSTER
+                    1-> Strategy.P2P_STAR
+                   else -> Strategy.P2P_POINT_TO_POINT
+                }
                 locationHelper?.requestLocationPermission(result)
             }
             startAdvertisingPeer -> {
                 Log.d("nearby_connections", "startAdvertisingPeer")
-                val advertisingOptions = AdvertisingOptions.Builder().setStrategy(Strategy.P2P_STAR).build()
+                val advertisingOptions = AdvertisingOptions.Builder().setStrategy(strategy).build()
                 Nearby.getConnectionsClient(activity).startAdvertising(localDeviceName, SERVICE_ID,
                         callbackUtils.advertConnectionLifecycleCallback, advertisingOptions)
                         .addOnSuccessListener {
@@ -83,7 +89,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             }
             startBrowsingForPeers -> {
                 Log.d("nearby_connections", "startBrowsingForPeers")
-                val discoveryOptions = DiscoveryOptions.Builder().setStrategy(Strategy.P2P_STAR).build()
+                val discoveryOptions = DiscoveryOptions.Builder().setStrategy(strategy).build()
                 Nearby.getConnectionsClient(activity)
                         .startDiscovery(SERVICE_ID, callbackUtils.endpointDiscoveryCallback, discoveryOptions)
                         .addOnSuccessListener {

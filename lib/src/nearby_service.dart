@@ -39,9 +39,11 @@ class NearbyService {
   /// and Bluetooth personal area networks for the underlying transport.
   /// param [serviceType] max length 15 character
   /// param [deviceId] is unique, you should use the UDID for [deviceId]
+  /// param [strategy] Nearby Connections supports different Strategies for advertising and discovery. The best Strategy to use depends on the use case. only support android OS
   Future<bool> init({
     @required String serviceType,
     @required String deviceId,
+    @required Strategy strategy,
     String deviceName,
   }) async {
     assert(
@@ -69,12 +71,26 @@ class NearbyService {
       }
     });
 
+    int strategyValue = 0;
+    switch(strategy){
+      case Strategy.P2P_CLUSTER:
+        strategyValue = 0;
+        break;
+      case Strategy.P2P_STAR:
+        strategyValue = 1;
+        break;
+      case Strategy.P2P_POINT_TO_POINT:
+        strategyValue = 2;
+        break;
+    }
+
     return _channel.invokeMethod(
       _initNearbyService,
       <String, dynamic>{
         'deviceId': deviceId,
         'deviceName': deviceName ?? "",
         'serviceType': serviceType,
+        'strategy': strategyValue,
       },
     );
   }

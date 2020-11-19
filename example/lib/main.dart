@@ -296,7 +296,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   void init() async {
     String deviceId = await _getId();
     nearbyService = NearbyService();
-    await nearbyService.init(serviceType: 'mp-connection', deviceId: deviceId);
+    await nearbyService.init(serviceType: 'mp-connection', deviceId: deviceId, strategy: Strategy.P2P_STAR);
     subscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList?.forEach((element) {
