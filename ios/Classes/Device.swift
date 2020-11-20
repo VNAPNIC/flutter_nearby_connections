@@ -5,7 +5,6 @@ import SwiftyJSON
 class Device: NSObject {
     let peerID: MCPeerID
     var session: MCSession?
-//    var deviceId: String
     var state = MCSessionState.notConnected
     var lastMessageReceived: Message?
     
