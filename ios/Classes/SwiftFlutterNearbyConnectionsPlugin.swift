@@ -59,7 +59,7 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     }
     
     @objc func stateChanged(){
-        let devices = MPCManager.instance.devices.compactMap({return DeviceJson(deviceId: $0.deviceId, deviceName: $0.peerID.displayName, state: $0.state.rawValue)})
+        let devices = MPCManager.instance.devices.compactMap({return DeviceJson(deviceId: $0.peerID.displayName, deviceName: $0.peerID.displayName, state: $0.state.rawValue)})
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, arguments: JSON(devices.compactMap({return $0.toStringAnyObject()})).rawString())
     }
     
@@ -103,9 +103,13 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
         case .initNearbyService:
             let data = call.arguments  as! Dictionary<String, AnyObject>
             let serviceType:String = data["serviceType"] as? String ?? SERVICE_TYPE
-            let deviceId:String = data["deviceId"] as? String ?? ""
-            MPCManager.instance.setup(serviceType: serviceType, deviceId: deviceId)
-            currentReceivedDevice = Device(peerID: MPCManager.instance.localPeerID, deviceId: MPCManager.instance.localDeviceId)
+            var deviceName:String = data["deviceName"] as? String ?? ""
+            if (deviceName.isEmpty){
+                deviceName =  UIDevice.current.name
+            }
+               
+            MPCManager.instance.setup(serviceType: serviceType, deviceName: deviceName)
+            currentReceivedDevice = Device(peerID: MPCManager.instance.localPeerID)
             result(true)
         case .startAdvertisingPeer:
             MPCManager.instance.startAdvertisingPeer()

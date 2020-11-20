@@ -42,16 +42,13 @@ class NearbyService {
   /// param [strategy] Nearby Connections supports different Strategies for advertising and discovery. The best Strategy to use depends on the use case. only support android OS
   Future<bool> init({
     @required String serviceType,
-    @required String deviceId,
     @required Strategy strategy,
     String deviceName,
   }) async {
     assert(
       serviceType.length <= 15 &&
           serviceType != null &&
-          serviceType.isNotEmpty &&
-          deviceId != null &&
-          deviceId.isNotEmpty,
+          serviceType.isNotEmpty
     );
 
     _channel.setMethodCallHandler((handler) async {
@@ -87,7 +84,6 @@ class NearbyService {
     return _channel.invokeMethod(
       _initNearbyService,
       <String, dynamic>{
-        'deviceId': deviceId,
         'deviceName': deviceName ?? "",
         'serviceType': serviceType,
         'strategy': strategyValue,

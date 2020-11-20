@@ -5,14 +5,13 @@ import SwiftyJSON
 class Device: NSObject {
     let peerID: MCPeerID
     var session: MCSession?
-    var deviceId: String
+//    var deviceId: String
     var state = MCSessionState.notConnected
     var lastMessageReceived: Message?
     
     static let messageReceivedNotification = Notification.Name("DeviceDidReceiveMessage")
     
-    init(peerID: MCPeerID, deviceId: String) {
-        self.deviceId = deviceId
+    init(peerID: MCPeerID) {
         self.peerID = peerID
         super.init()
     }

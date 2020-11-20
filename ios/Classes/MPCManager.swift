@@ -20,7 +20,6 @@ class MPCManager: NSObject {
     static let instance = MPCManager()
     
     var localPeerID: MCPeerID!
-    var localDeviceId : String!
     var enterbackgroundNotification: NSObjectProtocol!
     var devices: [Device] = [] {
         didSet {
@@ -32,12 +31,12 @@ class MPCManager: NSObject {
     
     override init() {
         if let data = UserDefaults.standard.data(forKey: "peerID"), let id = NSKeyedUnarchiver.unarchiveObject(with: data) as? MCPeerID {
-            self.localPeerID = id
+//            self.localPeerID = id
         } else {
-            let peerID = MCPeerID(displayName: UIDevice.current.name)
-            let data = NSKeyedArchiver.archivedData(withRootObject: peerID)
-            UserDefaults.standard.set(data, forKey: "peerID")
-            self.localPeerID = peerID
+//            let peerID = MCPeerID(displayName: UIDevice.current.name)
+//            let data = NSKeyedArchiver.archivedData(withRootObject: peerID)
+//            UserDefaults.standard.set(data, forKey: "peerID")
+//            self.localPeerID = peerID
         }
         super.init()
     }
@@ -48,8 +47,12 @@ class MPCManager: NSObject {
         }
     }
     
-    func setup(serviceType: String, deviceId: String) {
-        localDeviceId = deviceId
+    func setup(serviceType: String, deviceName: String) {
+        let peerID = MCPeerID(displayName: deviceName)
+        let data = NSKeyedArchiver.archivedData(withRootObject: peerID)
+        UserDefaults.standard.set(data, forKey: "peerID")
+        self.localPeerID = peerID
+        
         self.advertiser = MCNearbyServiceAdvertiser(peer: localPeerID, discoveryInfo: nil, serviceType: serviceType)
         self.advertiser.delegate = self
         
@@ -105,7 +108,7 @@ class MPCManager: NSObject {
     
     func disconnectPeer(deviceID: String){
         self.devices.forEach { (element) in
-            if(element.deviceId == deviceID){
+            if(element.peerID.displayName == deviceID){
                 element.disconnect()
             }
         }
@@ -113,7 +116,7 @@ class MPCManager: NSObject {
     
     func device(for deviceId: String) -> Device? {
         for device in self.devices {
-            if device.deviceId == deviceId { return device }
+            if device.peerID.displayName == deviceId { return device }
         }
         
         return nil
@@ -123,7 +126,7 @@ class MPCManager: NSObject {
         if let device = devices.first(where: {$0.peerID == id}) {
             return device
         } else {
-            let device = Device(peerID: id, deviceId: localDeviceId)
+            let device = Device(peerID: id)
             self.devices.append(device)
             return device
         }
