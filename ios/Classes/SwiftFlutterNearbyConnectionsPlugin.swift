@@ -106,25 +106,36 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
             let deviceId:String = data["deviceId"] as? String ?? ""
             MPCManager.instance.setup(serviceType: serviceType, deviceId: deviceId)
             currentReceivedDevice = Device(peerID: MPCManager.instance.localPeerID, deviceId: MPCManager.instance.localDeviceId)
+            result(true)
         case .startAdvertisingPeer:
             MPCManager.instance.startAdvertisingPeer()
+            result(true)
         case .startBrowsingForPeers:
             MPCManager.instance.startBrowsingForPeers()
+            result(true)
         case .stopAdvertisingPeer:
             MPCManager.instance.stopAdvertisingPeer()
+            result(true)
         case .stopBrowsingForPeers:
             MPCManager.instance.stopBrowsingForPeers()
+            result(true)
         case .invitePeer:
             let data = call.arguments  as! Dictionary<String, AnyObject>
             let deviceId:String? = data["deviceId"] as? String ?? nil
             if (deviceId != nil) {
                 MPCManager.instance.invitePeer(deviceID: deviceId!)
+                result(true)
+            } else {
+                result(false)
             }
         case .disconnectPeer:
          let data = call.arguments  as! Dictionary<String, AnyObject>
             let deviceId:String? = data["deviceId"] as? String ?? nil
             if (deviceId != nil) {
                 MPCManager.instance.disconnectPeer(deviceID: deviceId!)
+                result(true)
+            } else {
+                result(false)
             }
         case .sendMessage:
             let dict = call.arguments as! Dictionary<String, AnyObject>
@@ -133,11 +144,15 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
                 if let device = MPCManager.instance.device(for: dict["deviceId"] as! String) {
                     currentReceivedDevice = device
                     try device.send(data: jsonData)
+                    result(true)
+                    return
                 }
             } catch let error as NSError {
                 print(error)
             }
+            result(false)
         default:
+            result(FlutterMethodNotImplemented)
             return
         }
     }
