@@ -101,7 +101,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             }
             startAdvertisingPeer -> {
                 Log.d("nearby_connections", "startAdvertisingPeer")
-                mService?.startAdvertising(strategy)
+                mService?.startAdvertising(strategy, localDeviceName)
             }
             startBrowsingForPeers -> {
                 Log.d("nearby_connections", "startBrowsingForPeers")

@@ -19,7 +19,6 @@ const val CHANNEL_ID = "channel"
 
 class NearbyService : Service() {
     private val binder: IBinder = LocalBinder(this)
-    private val LOCAL_ENDPOINT_NAME = Build.DEVICE
     private lateinit var callbackUtils: CallbackUtils
     private lateinit var connectionsClient: ConnectionsClient
 
@@ -42,10 +41,10 @@ class NearbyService : Service() {
          connectionsClient.sendPayload(endpointId, Payload.fromBytes(str.toByteArray()))
     }
 
-    fun startAdvertising(strategy: Strategy) {
+    fun startAdvertising(strategy: Strategy, deviceName: String) {
         Log.d(TAG, "startAdvertising()")
          connectionsClient.startAdvertising(
-                LOCAL_ENDPOINT_NAME, SERVICE_ID, callbackUtils.connectionLifecycleCallback,
+                 deviceName, SERVICE_ID, callbackUtils.connectionLifecycleCallback,
                 AdvertisingOptions.Builder().setStrategy(strategy).build())
     }
 
