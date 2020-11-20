@@ -1,3 +1,8 @@
+## 1.0.4
+
+* Fix Android connected unstable
+* Fix IOS cannot result
+
 ## 1.0.3
 
 * Fix connect wifi on the Android OS

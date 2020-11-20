@@ -299,15 +299,33 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
 
   void init() async {
-    String deviceId = await _getDeviceID();
+    String deviceId = await _getId();
     nearbyService = NearbyService();
     await nearbyService.init(
         serviceType: 'mp-connection',
-        deviceName: deviceId,
-        strategy: Strategy.P2P_STAR);
+        strategy: Strategy.P2P_CLUSTER,
+        callback: (isRunning) async{
+          if (isRunning) {
+            if (widget.deviceType == DeviceType.browser) {
+              await nearbyService.stopBrowsingForPeers();
+              await nearbyService.startBrowsingForPeers();
+            } else {
+              await nearbyService.stopAdvertisingPeer();
+              await nearbyService.startAdvertisingPeer();
+
+              await nearbyService.stopBrowsingForPeers();
+              await nearbyService.startBrowsingForPeers();
+            }
+          }
+        });
     subscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList?.forEach((element) {
+        if(element.state == SessionState.connected){
+          nearbyService.stopBrowsingForPeers();
+        }else{
+          nearbyService.startBrowsingForPeers();
+        }
         print(
             " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
       });
@@ -325,14 +343,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         nearbyService.dataReceivedSubscription(callback: (data) {
       print("dataReceivedSubscription: ${jsonEncode(data)}");
       Fluttertoast.showToast(msg: jsonEncode(data));
-    });
-    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
-      if (widget.deviceType == DeviceType.browser) {
-        nearbyService.startBrowsingForPeers();
-      } else {
-        nearbyService.startAdvertisingPeer();
-        nearbyService.startBrowsingForPeers();
-      }
     });
   }
 }
