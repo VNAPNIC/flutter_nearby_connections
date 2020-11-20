@@ -34,14 +34,15 @@ class LocationHelper(private val activity: Activity) : PluginRegistry.ActivityRe
                 Manifest.permission.BLUETOOTH_ADMIN,
                 Manifest.permission.ACCESS_WIFI_STATE,
                 Manifest.permission.CHANGE_WIFI_STATE,
-                Manifest.permission.ACCESS_COARSE_LOCATION), REQUEST_LOCATION_PERMISSION)
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+                Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_LOCATION_PERMISSION)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean =
             if (requestCode == LOCATION_ENABLE_REQUEST) {
                 result = if (resultCode == Activity.RESULT_OK) {
-                    initiateLocationServiceRequest()
-                    requestLocationEnable()
+//                    initiateLocationServiceRequest()
+//                    requestLocationEnable()
                     result?.success(true)
                     null
                 } else {
@@ -59,8 +60,8 @@ class LocationHelper(private val activity: Activity) : PluginRegistry.ActivityRe
     override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String?>, grantResults: IntArray): Boolean =
             if (requestCode == REQUEST_LOCATION_PERMISSION && permissions.isNotEmpty()) {
                 result = if (grantResults[0] == PackageManager.PERMISSION_GRANTED) {
-                    initiateLocationServiceRequest()
-                    requestLocationEnable()
+//                    initiateLocationServiceRequest()
+//                    requestLocationEnable()
                     result?.success(true)
                     null
                 } else {

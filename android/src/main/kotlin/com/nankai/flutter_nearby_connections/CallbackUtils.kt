@@ -42,7 +42,7 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
     val endpointDiscoveryCallback: EndpointDiscoveryCallback = object : EndpointDiscoveryCallback() {
         override fun onEndpointFound(endpointId: String,
                                      discoveredEndpointInfo: DiscoveredEndpointInfo) {
-            Log.d("nearby_connections", "onEndpointFound ${discoveredEndpointInfo.toString()}")
+            Log.d("nearby_connections", "onEndpointFound $discoveredEndpointInfo")
             if(!deviceExists(endpointId)) {
                 val data = DeviceJson(endpointId, discoveredEndpointInfo.endpointName, notConnected)
                 addDevice(data)
@@ -74,22 +74,21 @@ class CallbackUtils constructor(private val channel: MethodChannel, private val 
 
     val connectionLifecycleCallback: ConnectionLifecycleCallback = object : ConnectionLifecycleCallback() {
         override fun onConnectionInitiated(endpointId: String, connectionInfo: ConnectionInfo) {
-            Log.d("nearby_connections", "onConnectionInitiated ${connectionInfo.toString()}")
+            Log.d("nearby_connections", "onConnectionInitiated $connectionInfo")
             val data = DeviceJson(endpointId, connectionInfo.endpointName, connecting)
             addDevice(data)
             Nearby.getConnectionsClient(activity).acceptConnection(endpointId, payloadCallback)
         }
 
-        override fun onConnectionResult(endpointId: String, connectionResolution: ConnectionResolution) {
+        override fun onConnectionResult(endpointId: String, result: ConnectionResolution) {
             Log.d("nearby_connections", "onConnectionResult $endpointId")
-            val data = DeviceJson(endpointId,
-                    if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,
-                    when (connectionResolution.status.statusCode) {
-                        ConnectionsStatusCodes.STATUS_OK -> connected
-                        ConnectionsStatusCodes.STATUS_CONNECTION_REJECTED -> notConnected
-                        ConnectionsStatusCodes.STATUS_ERROR -> notConnected
-                        else -> notConnected
-                    })
+            val data = if (result.status.isSuccess) {
+             DeviceJson(endpointId,
+                        if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!,connected)
+            }else{
+                DeviceJson(endpointId,
+                        if (device(endpointId)?.deviceName == null) "Null" else device(endpointId)?.deviceName!!, notConnected)
+            }
             addDevice(data)
         }
 

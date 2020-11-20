@@ -10,6 +10,7 @@ const _disconnectPeer = 'disconnect_peer';
 const _sendMessage = 'send_message';
 const _invokeChangeStateMethod = "invoke_change_state_method";
 const _invokeMessageReceiveMethod = "invoke_message_receive_method";
+const _invokeNearbyRunning = "nearby_running";
 
 /// [StateChangedCallback] is used to call back an object under List<Device>.
 /// [StateChangedCallback] will call when you register in [stateChangedSubscription]
@@ -40,11 +41,12 @@ class NearbyService {
   /// param [serviceType] max length 15 character
   /// param [deviceId] is unique, you should use the UDID for [deviceId]
   /// param [strategy] Nearby Connections supports different Strategies for advertising and discovery. The best Strategy to use depends on the use case. only support android OS
-  Future<bool> init({
+  Future init({
     @required String serviceType,
     @required String deviceId,
     @required Strategy strategy,
     String deviceName,
+    @required Function callback
   }) async {
     assert(
       serviceType.length <= 15 &&
@@ -68,6 +70,10 @@ class NearbyService {
           debugPrint(
               "_invokeMessageReceiveMethod | arguments: ${handler.arguments}");
           break;
+        case _invokeNearbyRunning:
+          await Future.delayed(Duration(seconds: 1));
+          callback(handler.arguments as bool);
+          break;
       }
     });
 
@@ -84,7 +90,7 @@ class NearbyService {
         break;
     }
 
-    return _channel.invokeMethod(
+    _channel.invokeMethod(
       _initNearbyService,
       <String, dynamic>{
         'deviceId': deviceId,
@@ -93,6 +99,10 @@ class NearbyService {
         'strategy': strategyValue,
       },
     );
+    if(Platform.isIOS) {
+      await Future.delayed(Duration(seconds: 1));
+      callback(true);
+    }
   }
 
   /// Begins advertising the service provided by a local peer.
