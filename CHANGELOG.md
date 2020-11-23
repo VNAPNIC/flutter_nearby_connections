@@ -1,3 +1,7 @@
+## 1.0.6
+
+* remove deviceID,  fix connect Android
+
 ## 1.0.5
 
 * remove deviceID,  fix connect IOS
