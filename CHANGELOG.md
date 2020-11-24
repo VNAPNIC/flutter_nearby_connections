@@ -1,3 +1,7 @@
+## 1.0.7
+
+* update readme
+
 ## 1.0.6
 
 * remove deviceID,  fix connect Android
