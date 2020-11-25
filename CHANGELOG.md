@@ -1,3 +1,15 @@
+## 1.0.7
+
+* update readme
+
+## 1.0.6
+
+* remove deviceID,  fix connect Android
+
+## 1.0.5
+
+* remove deviceID,  fix connect IOS
+
 ## 1.0.4
 
 * Fix Android connected unstable

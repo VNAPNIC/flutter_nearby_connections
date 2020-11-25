@@ -51,7 +51,6 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     private lateinit var callbackUtils: CallbackUtils
     private var mService: NearbyService? = null
 
-    private lateinit var localDeviceId: String
     private lateinit var localDeviceName: String
     private lateinit var strategy: Strategy
     private lateinit var connectionsClient: ConnectionsClient
@@ -85,7 +84,6 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 val intent = Intent(activity, NearbyService::class.java)
                 activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
 
-                localDeviceId = call.argument<String>("deviceId")!!
                 localDeviceName = if (call.argument<String>("deviceName").isNullOrEmpty())
                     Build.MANUFACTURER + " " + Build.MODEL
                 else
