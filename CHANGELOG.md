@@ -1,3 +1,7 @@
+## 1.0.8
+
+* fix issue on iOS
+
 ## 1.0.7
 
 * update readme

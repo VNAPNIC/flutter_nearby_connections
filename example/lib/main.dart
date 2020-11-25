@@ -5,6 +5,7 @@ import 'dart:io';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
+import 'package:flutter_udid/flutter_udid.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 void main() {
@@ -103,6 +104,10 @@ Future<String> _getId() async {
     var androidDeviceInfo = await deviceInfo.androidInfo;
     return androidDeviceInfo.androidId; // unique ID on Android
   }
+}
+
+Future<String> _getDeviceID() async {
+  return await FlutterUdid.udid;
 }
 
 class _DevicesListScreenState extends State<DevicesListScreen> {
@@ -294,11 +299,12 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
 
   void init() async {
+    String deviceId = await _getId();
     nearbyService = NearbyService();
     await nearbyService.init(
         serviceType: 'mp-connection',
         strategy: Strategy.P2P_CLUSTER,
-        callback: (isRunning) async{
+        callback: (isRunning) async {
           if (isRunning) {
             if (widget.deviceType == DeviceType.browser) {
               await nearbyService.stopBrowsingForPeers();
@@ -315,14 +321,18 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     subscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
       devicesList?.forEach((element) {
-        if(element.state == SessionState.connected){
-          nearbyService.stopBrowsingForPeers();
-        }else{
-          nearbyService.startBrowsingForPeers();
-        }
         print(
             " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
+
+        if (Platform.isAndroid) {
+          if (element.state == SessionState.connected) {
+            nearbyService.stopBrowsingForPeers();
+          } else {
+            nearbyService.startBrowsingForPeers();
+          }
+        }
       });
+
       setState(() {
         devices.clear();
         devices.addAll(devicesList);
