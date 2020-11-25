@@ -101,7 +101,11 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
     public func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
         switch MethodCall(rawValue: call.method) {
         case .initNearbyService:
-            let data = call.arguments  as! Dictionary<String, AnyObject>
+            guard let data = call.arguments as? Dictionary<String, AnyObject> else {
+                result(false)
+                return
+                
+            }
             let serviceType:String = data["serviceType"] as? String ?? SERVICE_TYPE
             var deviceName:String = data["deviceName"] as? String ?? ""
             if (deviceName.isEmpty){
@@ -124,16 +128,24 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
             MPCManager.instance.stopBrowsingForPeers()
             result(true)
         case .invitePeer:
-            let data = call.arguments  as! Dictionary<String, AnyObject>
-            let deviceId:String? = data["deviceId"] as? String ?? nil
-            if (deviceId != nil) {
-                MPCManager.instance.invitePeer(deviceID: deviceId!)
-                result(true)
-            } else {
+            guard let data = call.arguments as? Dictionary<String, AnyObject> else {
                 result(false)
+                return
+                
             }
+            guard let deviceId: String = data["deviceId"] as? String else {
+                result(false)
+                return
+            }
+            MPCManager.instance.invitePeer(deviceID: deviceId)
+            result(true)
+
         case .disconnectPeer:
-         let data = call.arguments  as! Dictionary<String, AnyObject>
+            guard let data = call.arguments as? Dictionary<String, AnyObject> else {
+                result(false)
+                return
+                
+            }
             let deviceId:String? = data["deviceId"] as? String ?? nil
             if (deviceId != nil) {
                 MPCManager.instance.disconnectPeer(deviceID: deviceId!)
@@ -142,10 +154,13 @@ public class SwiftFlutterNearbyConnectionsPlugin: NSObject, FlutterPlugin {
                 result(false)
             }
         case .sendMessage:
-            let dict = call.arguments as! Dictionary<String, AnyObject>
+            guard let dict = call.arguments as? Dictionary<String, AnyObject> else {
+                result(false)
+                return
+            }
             do {
                 let jsonData = try JSONSerialization.data(withJSONObject: dict, options: .prettyPrinted)
-                if let device = MPCManager.instance.device(for: dict["deviceId"] as! String) {
+                if let device = MPCManager.instance.findDevice(for: dict["deviceId"] as! String) {
                     currentReceivedDevice = device
                     try device.send(data: jsonData)
                     result(true)

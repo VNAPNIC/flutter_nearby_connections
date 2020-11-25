@@ -17,11 +17,10 @@ class Device: NSObject {
     
     func createSession() {
         if self.session != nil { return }
-        
         self.session = MCSession(peer: MPCManager.instance.localPeerID, securityIdentity: nil, encryptionPreference: .required)
         self.session?.delegate = self
     }
-    
+
     func disconnect() {
         self.session?.disconnect()
         self.session = nil
@@ -29,16 +28,22 @@ class Device: NSObject {
     }
     
     func invite(with browser: MCNearbyServiceBrowser) {
-        self.createSession()
-        browser.invitePeer(self.peerID, to: self.session!, withContext: nil, timeout: 10)
+        if (self.state == MCSessionState.notConnected) {
+            self.createSession()
+            if let session = session {
+                browser.invitePeer(self.peerID, to: session, withContext: nil, timeout: 10)
+            }
+        }
     }
-
+    
 }
 
 extension Device: MCSessionDelegate {
     public func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        self.state = state
-        NotificationCenter.default.post(name: MPCManager.Notifications.deviceDidChangeState, object: self)
+        if(self.state != state) {
+            self.state = state
+            NotificationCenter.default.post(name: MPCManager.Notifications.deviceDidChangeState, object: self)
+        }
     }
     
     public func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {
@@ -48,7 +53,7 @@ extension Device: MCSessionDelegate {
     public func session(_ session: MCSession, didReceive stream: InputStream, withName streamName: String, fromPeer peerID: MCPeerID) { }
     
     public func session(_ session: MCSession, didStartReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, with progress: Progress) { }
-
+    
     public func session(_ session: MCSession, didFinishReceivingResourceWithName resourceName: String, fromPeer peerID: MCPeerID, at localURL: URL?, withError error: Error?) { }
-
+    
 }

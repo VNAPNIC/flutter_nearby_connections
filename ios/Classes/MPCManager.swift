@@ -29,17 +29,17 @@ class MPCManager: NSObject {
     
     var deviceDidChange: (() -> Void)?
     
-    override init() {
-        if let data = UserDefaults.standard.data(forKey: "peerID"), let id = NSKeyedUnarchiver.unarchiveObject(with: data) as? MCPeerID {
+//    override init() {
+//        if let data = UserDefaults.standard.data(forKey: "peerID"), let id = NSKeyedUnarchiver.unarchiveObject(with: data) as? MCPeerID {
 //            self.localPeerID = id
-        } else {
+//        } else {
 //            let peerID = MCPeerID(displayName: UIDevice.current.name)
 //            let data = NSKeyedArchiver.archivedData(withRootObject: peerID)
 //            UserDefaults.standard.set(data, forKey: "peerID")
 //            self.localPeerID = peerID
-        }
-        super.init()
-    }
+//        }
+//        super.init()
+//    }
     
     deinit{
         if(enterbackgroundNotification != nil){
@@ -97,29 +97,19 @@ class MPCManager: NSObject {
     }
     
     func invitePeer(deviceID: String) {
-        self.devices.forEach { (element) in
-            element.disconnect()
+        do {
+            let device = MPCManager.instance.findDevice(for: deviceID)
+            if(device?.state == MCSessionState.notConnected){
+                device?.invite(with: self.browser)
+            }
+        } catch let error {
+            print(error.localizedDescription)
         }
-        
-        
-        let device = MPCManager.instance.device(for: deviceID)
-        device?.invite(with: self.browser)
     }
     
     func disconnectPeer(deviceID: String){
-        self.devices.forEach { (element) in
-            if(element.peerID.displayName == deviceID){
-                element.disconnect()
-            }
-        }
-    }
-    
-    func device(for deviceId: String) -> Device? {
-        for device in self.devices {
-            if device.peerID.displayName == deviceId { return device }
-        }
-        
-        return nil
+        let device = MPCManager.instance.findDevice(for: deviceID)
+        device?.disconnect()
     }
     
     func device(for id: MCPeerID) -> Device {
@@ -132,6 +122,21 @@ class MPCManager: NSObject {
         }
     }
     
+    func findDevice(for deviceId: String) -> Device? {
+        for device in self.devices {
+            if device.peerID.displayName == deviceId { return device }
+        }
+        
+        return nil
+    }
+    
+    func findDevice(for id: MCPeerID) -> Device? {
+        if let device = devices.first(where: {$0.peerID == id}) {
+            return device
+        }
+        return nil
+    }
+    
     @objc func enteredBackground() {
         for device in self.devices {
             device.disconnect()
@@ -141,7 +146,6 @@ class MPCManager: NSObject {
 
 extension MPCManager: MCNearbyServiceAdvertiserDelegate {
     func advertiser(_ advertiser: MCNearbyServiceAdvertiser, didReceiveInvitationFromPeer peerID: MCPeerID, withContext context: Data?, invitationHandler: @escaping (Bool, MCSession?) -> Void) {
-        
         let device = self.device(for: peerID)
         device.createSession()
         invitationHandler(true, device.session)
@@ -151,15 +155,21 @@ extension MPCManager: MCNearbyServiceAdvertiserDelegate {
 
 extension MPCManager: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
+        // found peer, create a device with this peerID
         self.device(for: peerID)
-        
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
-        let device = self.device(for: peerID)
-        device.disconnect()
-        devices.removeAll { (device) -> Bool in
-            device.peerID == peerID
+        // lost peer, disconnect and remove the device with this peerID
+        let device = self.findDevice(for: peerID)
+        device?.disconnect()
+        do {
+            try devices.removeAll { (device) -> Bool in
+                device.peerID == peerID
+            }
+        } catch let error {
+            print(error.localizedDescription)
         }
     }
+    
 }
