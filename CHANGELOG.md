@@ -1,3 +1,7 @@
+## 1.0.9
+
+* fix issue on iOS 14
+
 ## 1.0.8
 
 * fix issue on iOS

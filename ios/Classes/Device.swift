@@ -20,7 +20,7 @@ class Device: NSObject {
         self.session = MCSession(peer: MPCManager.instance.localPeerID, securityIdentity: nil, encryptionPreference: .required)
         self.session?.delegate = self
     }
-
+    
     func disconnect() {
         self.session?.disconnect()
         self.session = nil
@@ -35,15 +35,12 @@ class Device: NSObject {
             }
         }
     }
-    
 }
 
 extension Device: MCSessionDelegate {
     public func session(_ session: MCSession, peer peerID: MCPeerID, didChange state: MCSessionState) {
-        if(self.state != state) {
-            self.state = state
-            NotificationCenter.default.post(name: MPCManager.Notifications.deviceDidChangeState, object: self)
-        }
+        self.state = state
+        NotificationCenter.default.post(name: MPCManager.Notifications.deviceDidChangeState, object: nil)
     }
     
     public func session(_ session: MCSession, didReceive data: Data, fromPeer peerID: MCPeerID) {

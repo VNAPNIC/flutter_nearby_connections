@@ -5,7 +5,6 @@ import 'dart:io';
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
-import 'package:flutter_udid/flutter_udid.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 
 void main() {
@@ -104,10 +103,6 @@ Future<String> _getId() async {
     var androidDeviceInfo = await deviceInfo.androidInfo;
     return androidDeviceInfo.androidId; // unique ID on Android
   }
-}
-
-Future<String> _getDeviceID() async {
-  return await FlutterUdid.udid;
 }
 
 class _DevicesListScreenState extends State<DevicesListScreen> {
@@ -299,7 +294,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
   }
 
   void init() async {
-    String deviceId = await _getId();
     nearbyService = NearbyService();
     await nearbyService.init(
         serviceType: 'mp-connection',

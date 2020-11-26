@@ -4,9 +4,6 @@ flutter nearby connections
 #### Plugin: [https://pub.dev/packages/flutter_nearby_connections](https://pub.dev/packages/flutter_nearby_connections)
 
 ### Flutter plugin supports peer-to-peer connectivity and discovers nearby devices for Android and IOS
-
-#### Android doesn't support emulator only support real devices
-
 The flutter_nearby_connections plugin supports the discovery of services provided by nearby devices.
 Moreover, the flutter_nearby_connections plugin also supports communicating with those services through message-based data, streaming data, and resources (such as files). The framework uses infrastructure Wi-Fi networks, peer-to-peer Wi-Fi and Bluetooth Personal Area Networks (PAN) for the underlying transport over UDP.
 The project is based on [Nearby Connections API](https://developers.google.com/nearby/connections/overview) and [Multipeer Connectivity](https://developer.apple.com/documentation/multipeerconnectivity).
@@ -18,6 +15,31 @@ Methods provided:
 startAdvertisingPeer, startBrowsingForPeers, stopAdvertisingPeer
 
 We separate the dependencies of the MCNearbyServiceAdvertiser, MCNearbyServiceBrowser and MCSession classes.  All of the methods will be implemented in the NearbyService class.
+
+### Noted
+
+* ##### Android doesn't support emulator only support real devices
+
+* ##### On iOS 14, need to define in Info.plist
+
+```
+    <key>NSBonjourServices</key>
+    <array>
+        <string>_{YOUR_SERVICE_TYPE}._tcp</string>
+    </array>
+    <key>UIRequiresPersistentWiFi</key>
+    <true/>
+    <key>NSBluetoothAlwaysUsageDescription</key>
+    <string>{YOUR_DESCRIPTION}</string>
+```
+
+in this case, YOUR_SERVICE_TYPE is 'mp-connection' (you can define it)
+
+```
+nearbyService.init(
+        serviceType: 'mp-connection',
+        strategy: Strategy.P2P_CLUSTER,
+```
 
 #### Test on IOS device
 
