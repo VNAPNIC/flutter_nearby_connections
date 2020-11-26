@@ -39,10 +39,12 @@ class NearbyService {
   /// In iOS, the framework uses infrastructure Wi-Fi networks, peer-to-peer Wi-Fi,
   /// and Bluetooth personal area networks for the underlying transport.
   /// param [serviceType] max length 15 character, need to be defined in Info.plist
+  ///
   /// <key>NSBonjourServices</key>
-  // 	<array>
-  // 		<string>_[serviceType]._tcp</string>
-  // 	</array>
+  /// 	<array>
+  /// 		<string>_[serviceType]._tcp</string>
+  /// 	</array>
+  ///
   /// param [deviceId] is unique, you should use the UDID for [deviceId]
   /// param [strategy] Nearby Connections supports different Strategies for advertising and discovery. The best Strategy to use depends on the use case. only support android OS
   Future init({
