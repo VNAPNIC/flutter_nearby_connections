@@ -1,3 +1,7 @@
+## 1.0.10
+
+* refactor readme and code
+
 ## 1.0.9
 
 * fix issue on iOS 14
