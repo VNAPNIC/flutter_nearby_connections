@@ -19,10 +19,47 @@ class NearByConnectApiUtils(private val channel: MethodChannel, private val serv
 
     private val devices = mutableListOf<DeviceJson>()
     private val gson = Gson()
+    private var connectionsClient: ConnectionsClient = Nearby.getConnectionsClient(service)
+
+    fun startAdvertising(deviceName: String, serviceId: String, build: AdvertisingOptions) {
+        connectionsClient.startAdvertising(deviceName, serviceId, connectionLifecycleCallback, build)
+    }
+
+    fun startDiscovery(serviceId: String, build: DiscoveryOptions) {
+        connectionsClient.startDiscovery(serviceId, endpointDiscoveryCallback, build)
+    }
+
+    fun requestConnection(endpointId: String, displayName: String) {
+        connectionsClient.requestConnection(displayName, endpointId, connectionLifecycleCallback)
+    }
+
+    fun stopDiscovery() {
+        connectionsClient.stopDiscovery()
+    }
+
+    fun stopAdvertising() {
+        connectionsClient.stopAdvertising()
+    }
+
+    fun stopAllEndpoints() {
+        connectionsClient.stopAllEndpoints()
+    }
+
+    fun disconnectFromEndpoint(endpointId: String) {
+        connectionsClient.disconnectFromEndpoint(endpointId)
+        updateStatus(endpointId, notConnected)
+    }
+
+    fun sendPayload(endpointId: String, fromBytes: Payload) {
+        connectionsClient.sendPayload(endpointId, fromBytes)
+    }
+
+
     private fun deviceExists(deviceId: String) = devices.any { element -> element.deviceID == deviceId }
+
     private fun device(deviceId: String): DeviceJson? = devices.find { element -> element.deviceID == deviceId }
 
-    fun updateStatus(deviceId: String, state: Int) {
+    private fun updateStatus(deviceId: String, state: Int) {
         devices.find { element -> element.deviceID == deviceId }?.state = state
         val json = gson.toJson(devices)
         channel.invokeMethod(INVOKE_CHANGE_STATE_METHOD, json)

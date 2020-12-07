@@ -29,37 +29,18 @@ class NearbyService : Service() {
     private val TAG = "NearbyService"
 
     private val binder: IBinder = LocalBinder(this)
-    
-    private lateinit var nearByConnectApiUtils: NearByConnectApiUtils
-    private lateinit var wifiP2pUtils: WifiP2PUtils
+
+    private var nearByConnectionMapping: MappingAction? = null
 
     private lateinit var serviceType: String
-    private lateinit var connectionsClient: ConnectionsClient
-
 
     private lateinit var builder: NotificationCompat.Builder
-
-    private val bluetoothChangeReceiver: BroadcastReceiver = object : BroadcastReceiver() {
-        override fun onReceive(context: Context?, intent: Intent) {
-            val action = intent.action
-            if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
-                val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
-                        BluetoothAdapter.ERROR)
-                when (state) {
-                    BluetoothAdapter.STATE_OFF -> Log.i(TAG, "Bluetooth off")
-                    BluetoothAdapter.STATE_TURNING_OFF -> Log.i(TAG, "Turning Bluetooth off...")
-                    BluetoothAdapter.STATE_ON -> Log.i(TAG, "Bluetooth on")
-                    BluetoothAdapter.STATE_TURNING_ON -> Log.i(TAG, "Turning Bluetooth on...")
-                }
-            }
-        }
-    }
 
     override fun onCreate() {
         super.onCreate()
         startForeground(NOTIFICATION_ID, getNotification())
-        val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
-        registerReceiver(bluetoothChangeReceiver, filter)
+        nearByConnectionMapping = MappingAction(this)
+        nearByConnectionMapping?.create()
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -68,61 +49,48 @@ class NearbyService : Service() {
 
     override fun onDestroy() {
         super.onDestroy()
-        unregisterReceiver(bluetoothChangeReceiver)
-        stopAdvertising()
-        stopDiscovery()
         notificationUpdate("$serviceType is destroy!")
-        connectionsClient.stopAllEndpoints()
+        nearByConnectionMapping?.onDestroy()
     }
 
     fun initService(channel: MethodChannel, serviceType: String) {
         this@NearbyService.serviceType = serviceType
-        
-        this@NearbyService.nearByConnectApiUtils = NearByConnectApiUtils(channel, serviceType,this)
-        this@NearbyService.wifiP2pUtils = WifiP2PUtils(channel, serviceType,this)
-        
-        connectionsClient = Nearby.getConnectionsClient(this)
-
+        nearByConnectionMapping?.initNearBy(channel, serviceType)
         notificationUpdate("$serviceType is init!")
         val mNotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         mNotificationManager.notify(NOTIFICATION_ID, builder.build())
     }
 
-    fun sendStringPayload(endpointId: String, str: String) {
-        connectionsClient.sendPayload(endpointId, Payload.fromBytes(str.toByteArray()))
-    }
-
     fun startAdvertising(strategy: Strategy, deviceName: String) {
         Log.d(TAG, "startAdvertising()")
         notificationUpdate("$serviceType is running!")
-        connectionsClient.startAdvertising(
-                deviceName, SERVICE_ID, nearByConnectApiUtils.connectionLifecycleCallback,
-                AdvertisingOptions.Builder().setStrategy(strategy).build())
+        nearByConnectionMapping?.startAdvertising(strategy, deviceName)
     }
 
     fun startDiscovery(strategy: Strategy) {
         Log.d(TAG, "startDiscovery()")
         notificationUpdate("$serviceType is running!")
-        connectionsClient.startDiscovery(
-                SERVICE_ID, nearByConnectApiUtils.endpointDiscoveryCallback,
-                DiscoveryOptions.Builder().setStrategy(strategy).build())
-    }
-
-    fun stopDiscovery() {
-        connectionsClient.stopDiscovery()
-    }
-
-    fun stopAdvertising() {
-        connectionsClient.stopAdvertising()
-    }
-
-    fun disconnect(endpointId: String) {
-        connectionsClient.disconnectFromEndpoint(endpointId)
-        nearByConnectApiUtils.updateStatus(deviceId = endpointId, state = notConnected)
+        nearByConnectionMapping?.startDiscovery(strategy)
     }
 
     fun connect(endpointId: String, displayName: String) {
-        connectionsClient.requestConnection(displayName, endpointId, nearByConnectApiUtils.connectionLifecycleCallback)
+        nearByConnectionMapping?.connect(endpointId, displayName)
+    }
+
+    fun stopDiscovery() {
+        nearByConnectionMapping?.stopDiscovery()
+    }
+
+    fun stopAdvertising() {
+        nearByConnectionMapping?.stopAdvertising()
+    }
+
+    fun disconnect(endpointId: String) {
+        nearByConnectionMapping?.disconnect(endpointId)
+    }
+
+    fun sendStringPayload(endpointId: String, str: String) {
+        nearByConnectionMapping?.sendStringPayload(endpointId, str)
     }
 
     private fun getNotification(): Notification {

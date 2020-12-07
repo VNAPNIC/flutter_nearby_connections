@@ -8,7 +8,7 @@ import android.util.Log
 import com.nankai.flutter_nearby_connections.NearbyService
 import io.flutter.plugin.common.MethodChannel
 
-class WifiP2PUtils(private val channel: MethodChannel, private val serviceType: String, private val service: NearbyService) : WifiP2pManager.ConnectionInfoListener {
+class WifiP2PUtils(private val channel: MethodChannel, private val serviceType: String, private val service: NearbyService){
     private val TAG = "WifiP2pUtils"
 
     var wifiP2pManager: WifiP2pManager? = null
@@ -34,12 +34,14 @@ class WifiP2PUtils(private val channel: MethodChannel, private val serviceType: 
         return intentFilter
     }
 
-    private fun initWifiP2P() {
+    fun initWifiP2P() {
         wifiP2pManager = service.getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         wifiP2pChannel = wifiP2pManager?.initialize(
                 service.applicationContext,
                 service.mainLooper
-        ) { TODO("Not yet implemented") }
+        ) {
+            Log.w(TAG, "Wifi P2P disconnected!")
+        }
 
         wifiP2pManager?.let { wifiP2pManager ->
             wifiP2pChannel?.let { wifiP2pChannel ->
@@ -49,8 +51,5 @@ class WifiP2PUtils(private val channel: MethodChannel, private val serviceType: 
         }
     }
 
-    override fun onConnectionInfoAvailable(wifiP2pInfo: WifiP2pInfo?) {
-        this.hostAddress = wifiP2pInfo?.groupOwnerAddress?.hostAddress
-        Log.d(TAG, "wifiP2pInfo groupOwnerAddress getHostAddress() $hostAddress")
-    }
+
 }
