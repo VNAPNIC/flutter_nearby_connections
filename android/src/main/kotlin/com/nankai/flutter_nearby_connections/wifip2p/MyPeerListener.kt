@@ -10,11 +10,11 @@ class MyPeerListener : WifiP2pManager.PeerListListener {
 
     private val peers: List<WifiP2pDevice> = ArrayList()
 
-    override fun onPeersAvailable(wifiP2pDeviceList: WifiP2pDeviceList) {
+    override fun onPeersAvailable(wifiP2pDeviceList: WifiP2pDeviceList?) {
         val deviceDetails = ArrayList<WifiP2pDevice>()
         Log.d(TAG, "OnPeerAvailable()")
         if (wifiP2pDeviceList != null) {
-            if (wifiP2pDeviceList.deviceList.size == 0) {
+            if (wifiP2pDeviceList.deviceList.isEmpty()) {
                 Log.d(TAG, "wifiP2pDeviceList size is zero")
                 return
             }

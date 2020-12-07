@@ -29,8 +29,8 @@ class ServerSocketThread : AsyncTask<Any?, Any?, Any?>() {
             while (!isInterrupted) {
                 val client = serverSocket!!.accept()
                 Log.d(TAG, "Accepted Connection")
-                val inputstream = client.getInputStream()
-                val bufferedReader = BufferedReader(InputStreamReader(inputstream))
+                val inputStream = client.getInputStream()
+                val bufferedReader = BufferedReader(InputStreamReader(inputStream))
                 val sb = StringBuilder()
                 var line: String?
                 while (bufferedReader.readLine().also { line = it } != null) {
@@ -39,12 +39,10 @@ class ServerSocketThread : AsyncTask<Any?, Any?, Any?>() {
                 bufferedReader.close()
                 Log.d(TAG, "Completed ReceiveDataTask")
                 receivedData = sb.toString()
-                if (listener != null) {
-                    listener!!.onUpdate(receivedData)
-                }
+                listener?.onUpdate(receivedData)
                 Log.d(TAG, "received data: $receivedData")
             }
-            serverSocket!!.close()
+            serverSocket?.close()
             return null
         } catch (e: IOException) {
             e.printStackTrace()

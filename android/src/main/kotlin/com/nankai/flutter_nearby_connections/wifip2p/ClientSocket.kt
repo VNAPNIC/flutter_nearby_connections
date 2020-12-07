@@ -46,9 +46,9 @@ class ClientSocket(ip: String?, message: String?) : AsyncTask<Any?, Any?, Any?>(
              * Create a client socket with the host,
              * port, and timeout information.
              */
-            socket!!.bind(null)
+            socket?.bind(null)
             Log.d(TAG, "Trying to connect...")
-            socket!!.connect(InetSocketAddress(host, port), 500)
+            socket?.connect(InetSocketAddress(host, port), 500)
             Log.d(TAG, "Connected...")
             /**
              * Create a byte stream from a JPEG file and pipe it to the output stream
@@ -76,19 +76,17 @@ class ClientSocket(ip: String?, message: String?) : AsyncTask<Any?, Any?, Any?>(
          * transferring or if an exception occurred.
          */
         finally {
-            if (socket != null) {
-                if (socket!!.isConnected) {
-                    try {
-                        socket!!.close()
-                    } catch (e: IOException) {
-                        //catch logic
-                    }
+            if (socket?.isConnected == true) {
+                try {
+                    socket?.close()
+                } catch (e: IOException) {
+                    //catch logic
                 }
             }
         }
     }
 
-    inner class sendDataTask(private val toSend: String) : AsyncTask<Any?, Any?, Any?>() {
+    inner class SendDataTask(private val toSend: String) : AsyncTask<Any?, Any?, Any?>() {
         override fun doInBackground(objects: Array<Any?>): Any? {
             sendString()
             return null
