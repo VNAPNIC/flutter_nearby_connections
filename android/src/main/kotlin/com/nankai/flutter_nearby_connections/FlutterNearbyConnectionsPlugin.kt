@@ -5,6 +5,11 @@ import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
+import android.net.wifi.WpsInfo
+import android.net.wifi.p2p.WifiP2pConfig
+import android.net.wifi.p2p.WifiP2pDevice
+import android.net.wifi.p2p.WifiP2pInfo
+import android.net.wifi.p2p.WifiP2pManager
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
@@ -12,6 +17,9 @@ import androidx.annotation.NonNull
 import androidx.core.content.ContextCompat.startForegroundService
 import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
+import com.nankai.flutter_nearby_connections.wifip2p.ClientSocket
+import com.nankai.flutter_nearby_connections.wifip2p.MyPeerListener
+import com.nankai.flutter_nearby_connections.wifip2p.WifiBroadcastReceiver
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -43,7 +51,9 @@ const val INVOKE_MESSAGE_RECEIVE_METHOD = "invoke_message_receive_method"
 const val NEARBY_RUNNING = "nearby_running"
 
 /** FlutterNearbyConnectionsPlugin */
-class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware {
+class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, ActivityAware, WifiP2pManager.ConnectionInfoListener {
+    private val TAG = "FlutterNearbyConnectionsPlugin"
+
     private lateinit var channel: MethodChannel
     private var locationHelper: LocationHelper? = null
     private lateinit var activity: Activity
@@ -55,6 +65,12 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     private lateinit var strategy: Strategy
     private lateinit var connectionsClient: ConnectionsClient
     private var mBound = false
+
+    // wifi p2p
+    var wifiP2pManager: WifiP2pManager? = null
+    var wifiP2pChannel: WifiP2pManager.Channel? = null
+    var wifiBroadcastReceiver: WifiBroadcastReceiver? = null
+    var hostAddress: String? = null
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, viewTypeId)
@@ -96,6 +112,8 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 }
 
                 locationHelper?.requestLocationPermission(result)
+
+                initWifiP2p()
             }
             startAdvertisingPeer -> {
                 Log.d("nearby_connections", "startAdvertisingPeer")
@@ -181,5 +199,85 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     }
 
     override fun onDetachedFromActivityForConfigChanges() {
+    }
+
+    // ----------------------------------- Wifi P2P functions -----------------------------------
+    fun initWifiP2p() {
+        wifiP2pManager = activity.getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
+        wifiP2pChannel = wifiP2pManager?.initialize(
+                activity.applicationContext,
+                activity.getMainLooper(),
+                object : WifiP2pManager.ChannelListener {
+                    override fun onChannelDisconnected() {
+                        TODO("Not yet implemented")
+                    }
+                })
+        wifiBroadcastReceiver = WifiBroadcastReceiver(wifiP2pManager, wifiP2pChannel)
+    }
+
+    override fun onConnectionInfoAvailable(wifiP2pInfo: WifiP2pInfo?) {
+        this.hostAddress = wifiP2pInfo?.groupOwnerAddress?.getHostAddress()
+        Log.d(TAG, "wifiP2pInfo.groupOwnerAddress.getHostAddress() " + hostAddress)
+    }
+
+    private fun discoverPeers() {
+        Log.d(TAG, "discoverPeers()")
+        wifiP2pManager?.discoverPeers(wifiP2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.d(TAG, "peer discovery started")
+                val myPeerListener = MyPeerListener()
+                wifiP2pManager?.requestPeers(wifiP2pChannel, myPeerListener)
+            }
+
+            override fun onFailure(i: Int) {
+                if (i == WifiP2pManager.P2P_UNSUPPORTED) {
+                    Log.d(TAG, " peer discovery failed :" + "P2P_UNSUPPORTED")
+                } else if (i == WifiP2pManager.ERROR) {
+                    Log.d(TAG, " peer discovery failed :" + "ERROR")
+                } else if (i == WifiP2pManager.BUSY) {
+                    Log.d(TAG, " peer discovery failed :" + "BUSY")
+                }
+            }
+        })
+    }
+
+    private fun stopPeerDiscover() {
+        wifiP2pManager?.stopPeerDiscovery(wifiP2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.d(TAG, "Peer Discovery stopped")
+            }
+
+            override fun onFailure(i: Int) {
+                Log.d(TAG, "Stopping Peer Discovery failed")
+            }
+        })
+    }
+
+    fun connectToDevice(device: WifiP2pDevice) {
+        // Picking the first device found on the network.
+        val config = WifiP2pConfig()
+        config.deviceAddress = device.deviceAddress;
+        config.wps.setup = WpsInfo.PBC;
+        Log.d(TAG, "Trying to connect : " + device.deviceName);
+        wifiP2pManager?.connect(wifiP2pChannel, config, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.d(TAG, "Connected to :" + device.deviceName);
+            }
+
+            override fun onFailure(reason: Int) {
+                if (reason == WifiP2pManager.P2P_UNSUPPORTED) {
+                    Log.d(TAG, "P2P_UNSUPPORTED");
+                } else if (reason == WifiP2pManager.ERROR) {
+                    Log.d(TAG, "Conneciton falied : ERROR");
+                } else if (reason == WifiP2pManager.BUSY) {
+                    Log.d(TAG, "Conneciton falied : BUSY");
+                }
+            }
+        });
+    }
+
+    fun sendData(data: String) {
+        val clientSocket = ClientSocket(hostAddress, data)
+        clientSocket.execute()
     }
 }
