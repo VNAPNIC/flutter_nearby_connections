@@ -47,17 +47,14 @@ class NearbyService {
   ///
   /// param [deviceId] is unique, you should use the UDID for [deviceId]
   /// param [strategy] Nearby Connections supports different Strategies for advertising and discovery. The best Strategy to use depends on the use case. only support android OS
-  Future init({
-    @required String serviceType,
-    @required Strategy strategy,
-    String deviceName,
-    @required Function callback
-  }) async {
-    assert(
-      serviceType.length <= 15 &&
-          serviceType != null &&
-          serviceType.isNotEmpty
-    );
+  Future init(
+      {@required String serviceType,
+      @required Strategy strategy,
+      String deviceName,
+      @required Function callback}) async {
+    assert(serviceType.length <= 15 &&
+        serviceType != null &&
+        serviceType.isNotEmpty);
 
     _channel.setMethodCallHandler((handler) async {
       debugPrint("method: ${handler.method} | arguments: ${handler.arguments}");
@@ -81,7 +78,7 @@ class NearbyService {
     });
 
     int strategyValue = 0;
-    switch(strategy){
+    switch (strategy) {
       case Strategy.P2P_CLUSTER:
         strategyValue = 0;
         break;
@@ -90,6 +87,9 @@ class NearbyService {
         break;
       case Strategy.P2P_POINT_TO_POINT:
         strategyValue = 2;
+        break;
+      case Strategy.Wi_Fi_P2P:
+        strategyValue = 0;
         break;
     }
 
@@ -101,7 +101,7 @@ class NearbyService {
         'strategy': strategyValue,
       },
     );
-    if(Platform.isIOS) {
+    if (Platform.isIOS) {
       await Future.delayed(Duration(seconds: 1));
       callback(true);
     }

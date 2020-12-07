@@ -21,6 +21,7 @@ enum Strategy {
   ///
   /// [ACCESS_FINE_LOCATION]
   P2P_CLUSTER,
+
   /// [P2P_STAR] is a peer-to-peer strategy that supports a 1-to-N, or star-shaped, connection topology. In other words, this enables connecting devices within radio range (~100m) in a star shape, where each device can, at any given time, play the role of either a hub (where it can accept incoming connections from N other devices), or a spoke (where it can initiate an outgoing connection to a single hub), but not both.
   ///
   /// This strategy lends itself best to situations where there is one device advertising, and N devices which discover the advertiser, though you may still advertise and discover simultaneously if required.
@@ -39,6 +40,7 @@ enum Strategy {
   ///
   /// [ACCESS_FINE_LOCATION]
   P2P_STAR,
+
   /// [P2P_POINT_TO_POINT] is a peer-to-peer strategy that supports a 1-to-1 connection topology. In other words, this enables connecting devices within radio range (~100m) with the highest possible throughput, but does not allow for more than a single connection at a time.
   ///
   /// This strategy lends itself best to situations where transferring data is more important than the flexibility of maintaining multiple connections.
@@ -56,4 +58,10 @@ enum Strategy {
   /// Additionally, on devices running Q (and onwards), [FINE_LOCATION] is required in place of [COARSE] location.
   ///
   /// [ACCESS_FINE_LOCATION]
-  P2P_POINT_TO_POINT }
+  P2P_POINT_TO_POINT,
+
+  /// (P2P) allows Android 4.0 (API level 14) and higher devices with the appropriate hardware to connect directly to each other via Wi-Fi without an intermediate access point.
+  /// Using these APIs, you can discover and connect to other devices when each device supports Wi-Fi P2P, then communicate over a speedy connection across distances much longer than a Bluetooth connection.
+  /// This is useful for applications that share data among users, such as a multiplayer game or a photo sharing application.
+  Wi_Fi_P2P,
+}
