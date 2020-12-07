@@ -18,7 +18,7 @@ If doesn't find the Bluetooth then auto scan with the Wifi, only use wifi you ca
 
 #### IOS
 
-[Multipeer Connectivity](https://developer.apple.com/documentation/multipeerconnectivity).
+[Multipeer Connectivity](https://developer.apple.com/documentation/multipeerconnectivity)
 
 We use the NearbyConnections API, but Flutter methods are based on the concept of [Multipeer Connectivity IOS](https://developer.apple.com/documentation/multipeerconnectivity).
 
