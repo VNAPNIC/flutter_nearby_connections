@@ -34,7 +34,9 @@ class PermissionUtils(private val activity: Activity) : PluginRegistry.ActivityR
                 Manifest.permission.ACCESS_WIFI_STATE,
                 Manifest.permission.CHANGE_WIFI_STATE,
                 Manifest.permission.ACCESS_COARSE_LOCATION,
-                Manifest.permission.ACCESS_FINE_LOCATION), REQUEST_LOCATION_PERMISSION)
+                Manifest.permission.ACCESS_FINE_LOCATION,
+                Manifest.permission.UPDATE_DEVICE_STATS
+        ), REQUEST_LOCATION_PERMISSION)
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?): Boolean =

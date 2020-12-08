@@ -1,7 +1,6 @@
 package com.nankai.flutter_nearby_connections
 
 import android.app.Activity
-import android.bluetooth.BluetoothAdapter
 import android.content.*
 import android.os.Build
 import android.os.IBinder
@@ -77,7 +76,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
         when (call.method) {
             initNearbyService -> {
                 connectionsClient = Nearby.getConnectionsClient(activity)
-                
+
                 val intent = Intent(activity, NearbyService::class.java)
                 activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
 
@@ -103,10 +102,12 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             startAdvertisingPeer -> {
                 Log.d("nearby_connections", "startAdvertisingPeer")
                 mService?.startAdvertising(strategy, localDeviceName)
+                result.success(true)
             }
             startBrowsingForPeers -> {
                 Log.d("nearby_connections", "startBrowsingForPeers")
-                mService?.startDiscovery(strategy)
+                mService?.startDiscovery(strategy, localDeviceName)
+                result.success(true)
             }
             stopAdvertisingPeer -> {
                 Log.d("nearby_connections", "stopAdvertisingPeer")
@@ -123,6 +124,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 val deviceId = call.argument<String>("deviceId")
                 val displayName = call.argument<String>("deviceName")
                 mService?.connect(deviceId!!, displayName!!)
+                result.success(true)
             }
             disconnectPeer -> {
                 Log.d("nearby_connections", "disconnectPeer")
@@ -139,7 +141,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 deviceId?.let { id ->
                     mService?.sendStringPayload(id, message!!)
                 }
-
+                result.success(true)
             }
         }
     }
@@ -148,7 +150,7 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
         override fun onServiceConnected(className: ComponentName, service: IBinder) {
             val binder = service as LocalBinder
             mService = binder.service
-            mService?.initService(channel, serviceType)
+            mService?.onStart(channel, serviceType)
             mBound = true
             channel.invokeMethod(NEARBY_RUNNING, mBound)
         }

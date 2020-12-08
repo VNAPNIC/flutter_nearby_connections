@@ -4,13 +4,16 @@ import android.content.BroadcastReceiver
 import android.content.Context
 import android.content.Intent
 import android.net.NetworkInfo
+import android.net.wifi.WifiManager
 import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pInfo
 import android.net.wifi.p2p.WifiP2pManager
 import android.util.Log
 
-class WifiBroadcastReceiver(private val wifiP2pManager: WifiP2pManager,
-                            private val channel: WifiP2pManager.Channel) : BroadcastReceiver() {
+class WifiBroadcastReceiver(private val p2pManager: WifiP2pManager?,
+                            private val wifiManager: WifiManager?,
+                            private val channel: WifiP2pManager.Channel?,
+                            private val wifiP2PEvent: WifiP2PEvent) : BroadcastReceiver() {
 
     private val TAG = "WifiBroadcastReceiver"
 
@@ -25,16 +28,23 @@ class WifiBroadcastReceiver(private val wifiP2pManager: WifiP2pManager,
             WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> onConnectionChanged(intent)
             WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> onThisDeviceChanged(intent)
             WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION -> onDiscoveryChanged(intent)
+            WifiManager.SCAN_RESULTS_AVAILABLE_ACTION -> updateWifiAPs()
+            WifiManager.NETWORK_STATE_CHANGED_ACTION -> wifiConnectionChanged()
         }
     }
 
     private fun onStateChanged(intent: Intent) {
         val state = intent.getIntExtra(WifiP2pManager.EXTRA_WIFI_STATE, -1)
         val isConnected = state == WifiP2pManager.WIFI_P2P_STATE_ENABLED
-        Log.i(TAG, "onStateChanged: state $state")
+        wifiP2PEvent.isWifiP2pEnabled = isConnected
+        Log.d(TAG, "WIFI P2P ${if (isConnected) "NOT ENABLED" else "ENABLED"}")
     }
 
     private fun onPeersChanged() {
+        Log.i(TAG, "onPeersChanged")
+        val myPeerListener = MyPeerListener(wifiP2PEvent)
+        p2pManager?.requestPeers(channel, myPeerListener)
+        wifiManager?.startScan()
     }
 
     private fun onConnectionChanged(intent: Intent) {
@@ -64,5 +74,11 @@ class WifiBroadcastReceiver(private val wifiP2pManager: WifiP2pManager,
     private fun onDiscoveryChanged(intent: Intent) {
         val discoveryState = intent.getIntExtra(WifiP2pManager.EXTRA_DISCOVERY_STATE, WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED)
         Log.i(TAG, "onDiscoveryChanged discoveryState:${discoveryState}")
+    }
+
+    private fun wifiConnectionChanged() {
+    }
+
+    private fun updateWifiAPs() {
     }
 }

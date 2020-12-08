@@ -275,6 +275,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         break;
       case SessionState.connected:
         nearbyService.disconnectPeer(deviceID: device.deviceId);
+        nearbyService.startBrowsingForPeers();
         break;
       case SessionState.connecting:
         break;
@@ -309,8 +310,6 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         if (Platform.isAndroid) {
           if (element.state == SessionState.connected) {
             nearbyService.stopBrowsingForPeers();
-          } else {
-            nearbyService.startBrowsingForPeers();
           }
         }
       });
