@@ -5,8 +5,10 @@ import android.content.IntentFilter
 import android.net.wifi.WifiManager
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.WifiP2pConfig
+import android.net.wifi.p2p.WifiP2pDevice
 import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
+import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
 import android.util.Log
 import com.google.android.gms.nearby.connection.AdvertisingOptions
 import com.google.android.gms.nearby.connection.DiscoveryOptions
@@ -21,7 +23,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
                    private val serviceType: String,
                    val deviceManager: DeviceManager,
                    private val service: NearbyService)
-    : NearbyEvent {
+    : NearbyEvent, WifiP2pManager.DnsSdServiceResponseListener, WifiP2pManager.DnsSdTxtRecordListener {
 
     private val TAG = "WifiP2pUtils"
 
@@ -32,6 +34,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
     var p2pManager: WifiP2pManager? = null
     var p2pChannel: WifiP2pManager.Channel? = null
     var p2pConfig: WifiP2pConfig = WifiP2pConfig()
+    var p2pServiceRequest: WifiP2pDnsSdServiceRequest? = null
 
     var wifiBroadcastReceiver: WifiBroadcastReceiver? = null
     var wifiManager: WifiManager? = null
@@ -66,7 +69,6 @@ class WifiP2PEvent(private val channel: MethodChannel,
             Log.w(TAG, "Wifi P2P disconnected!")
         }
 
-
         wifiManager = service.getSystemService(Context.WIFI_SERVICE) as WifiManager
         if (wifiManager?.wifiState != WifiManager.WIFI_STATE_ENABLED) {
             wifiManager?.isWifiEnabled = true
@@ -83,9 +85,8 @@ class WifiP2PEvent(private val channel: MethodChannel,
             }
         }
 
-        wifiBroadcastReceiver = WifiBroadcastReceiver(p2pManager, wifiManager, p2pChannel, this@WifiP2PEvent)
+        wifiBroadcastReceiver = WifiBroadcastReceiver(p2pManager, p2pChannel, this@WifiP2PEvent)
         service.registerReceiver(wifiBroadcastReceiver, setupIntentFilters())
-
 
         // Wi-Fi Direct Auto Accept authentication (Only PBC supported)
         val wdAutoAccept = WifiDirectAutoAccept(p2pManager, p2pChannel)
@@ -104,7 +105,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
     override fun startAdvertising(deviceName: String, serviceId: String, build: AdvertisingOptions) {
         val record: MutableMap<String, String> = HashMap()
         record["available"] = "visible"
-        val serviceMagnet = WifiP2pDnsSdServiceInfo.newInstance("MAGNET", serviceType, record)
+        val serviceMagnet = WifiP2pDnsSdServiceInfo.newInstance(deviceName, serviceType, record)
         p2pManager?.addLocalService(p2pChannel, serviceMagnet, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
                 lastError = -1
@@ -119,7 +120,35 @@ class WifiP2PEvent(private val channel: MethodChannel,
     }
 
     override fun startDiscovery(serviceId: String, deviceName: String, build: DiscoveryOptions) {
+        /*
+         * Register listeners for DNS-SD services. These are callbacks invoked
+		 * by the system when a service is actually discovered.
+		 */
+        p2pManager?.setDnsSdResponseListeners(p2pChannel, this, this)
 
+        // After attaching listeners, create a service request and initiate discovery.
+        p2pServiceRequest = WifiP2pDnsSdServiceRequest.newInstance()
+
+        p2pManager?.addServiceRequest(p2pChannel, p2pServiceRequest, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.e(TAG, "Added service discovery request")
+            }
+
+            override fun onFailure(arg0: Int) {
+                Log.e(TAG, "Failed adding service discovery request: " + desError(arg0))
+            }
+        })
+
+        p2pManager?.discoverServices(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.e(TAG, "Service discovery initiated")
+            }
+
+            override fun onFailure(arg0: Int) {
+                Log.e(TAG, "Service discovery failed: " + desError(arg0))
+//                restartServiceDiscovery()
+            }
+        })
     }
 
     override fun requestConnection(endpointId: String, displayName: String) {
@@ -151,5 +180,23 @@ class WifiP2PEvent(private val channel: MethodChannel,
     }
 
     override fun sendPayload(endpointId: String, fromBytes: Payload) {
+    }
+
+    override fun onDnsSdServiceAvailable(instanceName: String?, registrationType: String?, srcDevice: WifiP2pDevice?) {
+
+    }
+
+    override fun onDnsSdTxtRecordAvailable(fullDomainName: String?, txtRecordMap: MutableMap<String, String>?, srcDevice: WifiP2pDevice?) {
+
+    }
+
+    fun desError(errorCode: Int): String {
+        return when (errorCode) {
+            0 -> "internal error"
+            1 -> " p2p unsupported"
+            2 -> "framework busy"
+            3 -> "no service requests"
+                else -> "Unknown error!"
+            }
     }
 }

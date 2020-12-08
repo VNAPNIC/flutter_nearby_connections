@@ -11,7 +11,6 @@ import android.net.wifi.p2p.WifiP2pManager
 import android.util.Log
 
 class WifiBroadcastReceiver(private val p2pManager: WifiP2pManager?,
-                            private val wifiManager: WifiManager?,
                             private val channel: WifiP2pManager.Channel?,
                             private val wifiP2PEvent: WifiP2PEvent) : BroadcastReceiver() {
 
@@ -28,8 +27,6 @@ class WifiBroadcastReceiver(private val p2pManager: WifiP2pManager?,
             WifiP2pManager.WIFI_P2P_CONNECTION_CHANGED_ACTION -> onConnectionChanged(intent)
             WifiP2pManager.WIFI_P2P_THIS_DEVICE_CHANGED_ACTION -> onThisDeviceChanged(intent)
             WifiP2pManager.WIFI_P2P_DISCOVERY_CHANGED_ACTION -> onDiscoveryChanged(intent)
-            WifiManager.SCAN_RESULTS_AVAILABLE_ACTION -> updateWifiAPs()
-            WifiManager.NETWORK_STATE_CHANGED_ACTION -> wifiConnectionChanged()
         }
     }
 
@@ -44,7 +41,6 @@ class WifiBroadcastReceiver(private val p2pManager: WifiP2pManager?,
         Log.i(TAG, "onPeersChanged")
         val myPeerListener = MyPeerListener(wifiP2PEvent)
         p2pManager?.requestPeers(channel, myPeerListener)
-        wifiManager?.startScan()
     }
 
     private fun onConnectionChanged(intent: Intent) {
@@ -74,11 +70,5 @@ class WifiBroadcastReceiver(private val p2pManager: WifiP2pManager?,
     private fun onDiscoveryChanged(intent: Intent) {
         val discoveryState = intent.getIntExtra(WifiP2pManager.EXTRA_DISCOVERY_STATE, WifiP2pManager.WIFI_P2P_DISCOVERY_STOPPED)
         Log.i(TAG, "onDiscoveryChanged discoveryState:${discoveryState}")
-    }
-
-    private fun wifiConnectionChanged() {
-    }
-
-    private fun updateWifiAPs() {
     }
 }
