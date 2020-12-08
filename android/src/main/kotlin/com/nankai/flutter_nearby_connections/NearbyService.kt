@@ -4,22 +4,15 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.Service
-import android.bluetooth.BluetoothAdapter
-import android.content.BroadcastReceiver
 import android.content.Context
 
 import android.content.Intent
-import android.content.IntentFilter
 import android.os.Binder
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.core.app.NotificationCompat
-import com.google.android.gms.nearby.Nearby
 import com.google.android.gms.nearby.connection.*
-import com.nankai.flutter_nearby_connections.nearbyConnectApi.NearByConnectApiUtils
-import com.nankai.flutter_nearby_connections.nearbyConnectApi.notConnected
-import com.nankai.flutter_nearby_connections.wifip2p.WifiP2PUtils
 import io.flutter.plugin.common.MethodChannel
 
 const val NOTIFICATION_ID = 101
@@ -30,7 +23,7 @@ class NearbyService : Service() {
 
     private val binder: IBinder = LocalBinder(this)
 
-    private var nearByConnectionMapping: MappingAction? = null
+    private var eventMapping: EventMapping? = null
 
     private lateinit var serviceType: String
 
@@ -39,8 +32,8 @@ class NearbyService : Service() {
     override fun onCreate() {
         super.onCreate()
         startForeground(NOTIFICATION_ID, getNotification())
-        nearByConnectionMapping = MappingAction(this)
-        nearByConnectionMapping?.create()
+        eventMapping = EventMapping(this)
+        eventMapping?.create()
     }
 
     override fun onBind(intent: Intent?): IBinder {
@@ -50,12 +43,12 @@ class NearbyService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         notificationUpdate("$serviceType is destroy!")
-        nearByConnectionMapping?.onDestroy()
+        eventMapping?.onDestroy()
     }
 
     fun initService(channel: MethodChannel, serviceType: String) {
         this@NearbyService.serviceType = serviceType
-        nearByConnectionMapping?.initNearBy(channel, serviceType)
+        eventMapping?.initNearBy(channel, serviceType)
         notificationUpdate("$serviceType is init!")
         val mNotificationManager = getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         mNotificationManager.notify(NOTIFICATION_ID, builder.build())
@@ -64,33 +57,33 @@ class NearbyService : Service() {
     fun startAdvertising(strategy: Strategy, deviceName: String) {
         Log.d(TAG, "startAdvertising()")
         notificationUpdate("$serviceType is running!")
-        nearByConnectionMapping?.startAdvertising(strategy, deviceName)
+        eventMapping?.startAdvertising(strategy, deviceName)
     }
 
     fun startDiscovery(strategy: Strategy) {
         Log.d(TAG, "startDiscovery()")
         notificationUpdate("$serviceType is running!")
-        nearByConnectionMapping?.startDiscovery(strategy)
+        eventMapping?.startDiscovery(strategy)
     }
 
     fun connect(endpointId: String, displayName: String) {
-        nearByConnectionMapping?.connect(endpointId, displayName)
+        eventMapping?.connect(endpointId, displayName)
     }
 
     fun stopDiscovery() {
-        nearByConnectionMapping?.stopDiscovery()
+        eventMapping?.stopDiscovery()
     }
 
     fun stopAdvertising() {
-        nearByConnectionMapping?.stopAdvertising()
+        eventMapping?.stopAdvertising()
     }
 
     fun disconnect(endpointId: String) {
-        nearByConnectionMapping?.disconnect(endpointId)
+        eventMapping?.disconnect(endpointId)
     }
 
     fun sendStringPayload(endpointId: String, str: String) {
-        nearByConnectionMapping?.sendStringPayload(endpointId, str)
+        eventMapping?.sendStringPayload(endpointId, str)
     }
 
     private fun getNotification(): Notification {

@@ -15,7 +15,7 @@ import com.nankai.flutter_nearby_connections.nearbyConnectApi.NearByConnectApiUt
 import com.nankai.flutter_nearby_connections.wifip2p.WifiP2PUtils
 import io.flutter.plugin.common.MethodChannel
 
-class MappingAction(private val service: NearbyService) {
+class EventMapping(private val service: NearbyService) {
 
     private val TAG = "MappingAction"
 
@@ -23,7 +23,7 @@ class MappingAction(private val service: NearbyService) {
 
     private var bluetoothExist = false
 
-    private lateinit var nearByConnectApiUtils: NearByConnectApiUtils
+    private lateinit var nearByConnectUtils: NearByConnectApiUtils
     private lateinit var wifiP2pUtils: WifiP2PUtils
 
     private val bluetoothChangeReceiver: BroadcastReceiver = object : BroadcastReceiver() {
@@ -73,49 +73,49 @@ class MappingAction(private val service: NearbyService) {
     }
 
     fun initNearBy(channel: MethodChannel, serviceType: String) {
-        nearByConnectApiUtils = NearByConnectApiUtils(channel, serviceType, service)
+        nearByConnectUtils = NearByConnectApiUtils(channel, serviceType, service)
         wifiP2pUtils = WifiP2PUtils(channel, serviceType, service)
     }
 
 
     fun startAdvertising(strategy: Strategy, deviceName: String) {
-        nearByConnectApiUtils.startAdvertising(
+        nearByConnectUtils.startAdvertising(
                 deviceName,
                 SERVICE_ID,
                 AdvertisingOptions.Builder().setStrategy(strategy).build())
     }
 
     fun startDiscovery(strategy: Strategy) {
-        nearByConnectApiUtils.startDiscovery(
+        nearByConnectUtils.startDiscovery(
                 SERVICE_ID,
                 DiscoveryOptions.Builder().setStrategy(strategy).build())
     }
 
     fun connect(endpointId: String, displayName: String) {
-        nearByConnectApiUtils.requestConnection(endpointId, displayName)
+        nearByConnectUtils.requestConnection(endpointId, displayName)
     }
 
     fun stopDiscovery() {
-        nearByConnectApiUtils.stopDiscovery()
+        nearByConnectUtils.stopDiscovery()
     }
 
     fun stopAdvertising() {
-        nearByConnectApiUtils.stopAdvertising()
+        nearByConnectUtils.stopAdvertising()
     }
 
     fun disconnect(endpointId: String) {
-        nearByConnectApiUtils.disconnectFromEndpoint(endpointId)
+        nearByConnectUtils.disconnectFromEndpoint(endpointId)
     }
 
     fun sendStringPayload(endpointId: String, str: String) {
-        nearByConnectApiUtils.sendPayload(endpointId, Payload.fromBytes(str.toByteArray()))
+        nearByConnectUtils.sendPayload(endpointId, Payload.fromBytes(str.toByteArray()))
     }
 
     fun onDestroy() {
         service.unregisterReceiver(bluetoothChangeReceiver)
         stopAdvertising()
         stopDiscovery()
-        nearByConnectApiUtils.stopAllEndpoints()
+        nearByConnectUtils.stopAllEndpoints()
     }
 
     private fun setBluetooth(enable: Boolean): Boolean {
