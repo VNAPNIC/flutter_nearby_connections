@@ -6,7 +6,6 @@ import android.net.wifi.WifiManager
 import android.net.wifi.WpsInfo
 import android.net.wifi.p2p.WifiP2pConfig
 import android.net.wifi.p2p.WifiP2pDevice
-import android.net.wifi.p2p.WifiP2pInfo
 import android.net.wifi.p2p.WifiP2pManager
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceInfo
 import android.net.wifi.p2p.nsd.WifiP2pDnsSdServiceRequest
@@ -32,7 +31,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
         WifiP2pManager.DnsSdServiceResponseListener,
         WifiP2pManager.DnsSdTxtRecordListener {
 
-    private val TAG = "WifiP2pUtils"
+    private val TAG = WifiP2PEvent::class.java.simpleName
 
     var isWifiP2pEnabled: Boolean = false
 
@@ -116,16 +115,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
             override fun onSuccess() {
                 lastError = -1
                 Log.i(TAG, "Added local service")
-
-                p2pManager?.createGroup(p2pChannel, object : WifiP2pManager.ActionListener {
-                    override fun onSuccess() {
-                        Log.i(TAG, "Group created successfully")
-                    }
-
-                    override fun onFailure(reason: Int) {
-                        Log.i(TAG, "Group creation failed: ${desError(reason)}")
-                    }
-                })
+                crateGroup()
             }
 
             override fun onFailure(reason: Int) {
@@ -145,25 +135,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
         // After attaching listeners, create a service request and initiate discovery.
         p2pServiceRequest = WifiP2pDnsSdServiceRequest.newInstance(serviceType)
 
-        p2pManager?.addServiceRequest(p2pChannel, p2pServiceRequest, object : WifiP2pManager.ActionListener {
-            override fun onSuccess() {
-                Log.i(TAG, "Added service discovery request")
-                p2pManager?.discoverServices(p2pChannel, object : WifiP2pManager.ActionListener {
-                    override fun onSuccess() {
-                        Log.i(TAG, "Service discovery initiated")
-                    }
-
-                    override fun onFailure(reason: Int) {
-                        Log.e(TAG, "Service discovery failed: ${desError(reason)}")
-//                restartServiceDiscovery()
-                    }
-                })
-            }
-
-            override fun onFailure(reason: Int) {
-                Log.e(TAG, "Failed adding service discovery request: ${desError(reason)}")
-            }
-        })
+        restartServiceDiscovery()
     }
 
     override fun requestConnection(endpointId: String, displayName: String) {
@@ -193,26 +165,35 @@ class WifiP2PEvent(private val channel: MethodChannel,
                 Log.e(TAG, "Clearing local services failed: ${desError(reason)}")
             }
         })
+
+        p2pManager?.removeGroup(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.i(TAG, "Group removed successfully")
+            }
+
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Group remove failed: ${desError(reason)}")
+            }
+        })
     }
 
     override fun stopDiscovery() {
         p2pManager?.stopPeerDiscovery(p2pChannel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
                 Log.i(TAG, "Stop peer discovery success")
+                p2pManager?.clearServiceRequests(p2pChannel, object : WifiP2pManager.ActionListener {
+                    override fun onSuccess() {
+                        Log.i(TAG, "Clear service requests success")
+                    }
+
+                    override fun onFailure(reason: Int) {
+                        Log.e(TAG, "Clear service requests failed: ${desError(reason)}")
+                    }
+                })
             }
 
             override fun onFailure(reason: Int) {
                 Log.e(TAG, "Stop peer discovery failed: ${desError(reason)}")
-            }
-        })
-
-        p2pManager?.clearServiceRequests(p2pChannel, object : WifiP2pManager.ActionListener {
-            override fun onSuccess() {
-                Log.i(TAG, "Clear service requests success")
-            }
-
-            override fun onFailure(reason: Int) {
-                Log.e(TAG, "Clear service requests failed: ${desError(reason)}")
             }
         })
     }
@@ -227,6 +208,8 @@ class WifiP2PEvent(private val channel: MethodChannel,
                 Log.e(TAG, "Current Connection not Terminated: ${desError(reason)}")
             }
         })
+
+        disconnect()
     }
 
     override fun disconnectFromEndpoint(endpointId: String) {
@@ -239,6 +222,24 @@ class WifiP2PEvent(private val channel: MethodChannel,
                 Log.e(TAG, "Current Connection not Terminated: ${desError(reason)}")
             }
         })
+
+        p2pManager?.requestGroupInfo(p2pChannel) { group ->
+            if (group != null) {
+                p2pManager?.removeGroup(p2pChannel, object : WifiP2pManager.ActionListener {
+                    override fun onSuccess() {
+                        Log.i(TAG, "Group removed successfully")
+                        restartServiceDiscovery()
+                        if(group.isGroupOwner){
+                            crateGroup()
+                        }
+                    }
+
+                    override fun onFailure(reason: Int) {
+                        Log.d(TAG, "removeGroup onFailure: ${desError(reason)}")
+                    }
+                })
+            }
+        }
     }
 
     override fun sendPayload(endpointId: String, fromBytes: Payload) {
@@ -269,6 +270,65 @@ class WifiP2PEvent(private val channel: MethodChannel,
     override fun onDnsSdTxtRecordAvailable(fullDomainName: String?, txtRecordMap: MutableMap<String, String>?, srcDevice: WifiP2pDevice?) {
 
     }
+
+    private fun restartServiceDiscovery(){
+        p2pManager?.stopPeerDiscovery(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.i(TAG, "Stop peer discovery success")
+                p2pManager?.addServiceRequest(p2pChannel, p2pServiceRequest, object : WifiP2pManager.ActionListener {
+                    override fun onSuccess() {
+                        Log.i(TAG, "Added service discovery request")
+                        p2pManager?.discoverServices(p2pChannel, object : WifiP2pManager.ActionListener {
+                            override fun onSuccess() {
+                                Log.i(TAG, "Service discovery initiated")
+                            }
+
+                            override fun onFailure(reason: Int) {
+                                Log.e(TAG, "Service discovery failed: ${desError(reason)}")
+                            }
+                        })
+                    }
+
+                    override fun onFailure(reason: Int) {
+                        Log.e(TAG, "Failed adding service discovery request: ${desError(reason)}")
+                    }
+                })
+            }
+
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Stop peer discovery failed: ${desError(reason)}")
+            }
+        })
+    }
+
+    private fun disconnect(){
+        p2pManager?.requestGroupInfo(p2pChannel) { group ->
+            if (group != null) {
+                p2pManager?.removeGroup(p2pChannel, object : WifiP2pManager.ActionListener {
+                    override fun onSuccess() {
+                        Log.i(TAG, "Group removed successfully")
+                    }
+
+                    override fun onFailure(reason: Int) {
+                        Log.d(TAG, "removeGroup onFailure: ${desError(reason)}")
+                    }
+                })
+            }
+        }
+    }
+
+    private fun crateGroup(){
+        p2pManager?.createGroup(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.i(TAG, "Group created successfully")
+            }
+
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Group create failed: ${desError(reason)}")
+            }
+        })
+    }
+
 }
 
 fun desError(errorCode: Int): String {

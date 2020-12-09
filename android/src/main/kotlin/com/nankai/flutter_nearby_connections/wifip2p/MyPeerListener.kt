@@ -18,12 +18,11 @@ class MyPeerListener(private val wifiP2PEvent: WifiP2PEvent) : WifiP2pManager.Pe
                 return
             }
             for (device in deviceList.deviceList) {
-                val data = DeviceModel(
+                wifiP2PEvent.deviceManager.addDevice(DeviceModel(
                         device.deviceAddress,
                         device.deviceName,
                         getDeviceStatus(device.status)
-                )
-                wifiP2PEvent.deviceManager.addDevice(data)
+                ))
                 Log.d(TAG, "Found device :" + device.deviceName + " " + device.deviceAddress)
             }
         } ?: Log.d(TAG, "wifiP2pDeviceList is null")
