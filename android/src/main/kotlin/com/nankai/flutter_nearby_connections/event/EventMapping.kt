@@ -86,9 +86,7 @@ class EventMapping(private val service: NearbyService) : NearbyServiceEvent {
 
     override fun onDestroy() {
         service.unregisterReceiver(bluetoothChangeReceiver)
-        stopAdvertising()
-        stopDiscovery()
-        wifiP2PEvent.stopAllEndpoints()
+        wifiP2PEvent.onDispose()
     }
 
     override fun startAdvertising(strategy: Strategy, deviceName: String) {

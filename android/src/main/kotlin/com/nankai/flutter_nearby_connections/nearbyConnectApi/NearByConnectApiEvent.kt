@@ -126,4 +126,10 @@ class NearByConnectApiEvent(private val channel: MethodChannel,
     override fun sendPayload(endpointId: String, fromBytes: Payload) {
         connectionsClient.sendPayload(endpointId, fromBytes)
     }
+
+    override fun onDispose() {
+        stopAdvertising()
+        stopDiscovery()
+        stopAllEndpoints()
+    }
 }

@@ -23,4 +23,6 @@ interface NearbyEvent {
     fun disconnectFromEndpoint(endpointId: String)
 
     fun sendPayload(endpointId: String, fromBytes: Payload)
+    
+    fun onDispose()
 }

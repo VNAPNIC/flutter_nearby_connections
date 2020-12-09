@@ -114,7 +114,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
 
             override fun onFailure(reason: Int) {
                 lastError = reason
-                Log.e(TAG, "Adding local service failed, error code  + $reason")
+                Log.e(TAG, "Adding local service failed: ${desError(reason)}")
             }
         })
     }
@@ -134,8 +134,8 @@ class WifiP2PEvent(private val channel: MethodChannel,
                 Log.e(TAG, "Added service discovery request")
             }
 
-            override fun onFailure(arg0: Int) {
-                Log.e(TAG, "Failed adding service discovery request: " + desError(arg0))
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Failed adding service discovery request: ${desError(reason)}")
             }
         })
 
@@ -144,8 +144,8 @@ class WifiP2PEvent(private val channel: MethodChannel,
                 Log.e(TAG, "Service discovery initiated")
             }
 
-            override fun onFailure(arg0: Int) {
-                Log.e(TAG, "Service discovery failed: " + desError(arg0))
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Service discovery failed: ${desError(reason)}")
 //                restartServiceDiscovery()
             }
         })
@@ -161,8 +161,8 @@ class WifiP2PEvent(private val channel: MethodChannel,
                 Log.e(TAG, "Stop peer discovery success")
             }
 
-            override fun onFailure(arg0: Int) {
-                Log.e(TAG, "Stop peer discovery failed: " + desError(arg0))
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Stop peer discovery failed: ${desError(reason)}")
             }
         })
 
@@ -171,8 +171,8 @@ class WifiP2PEvent(private val channel: MethodChannel,
                 Log.e(TAG, "Clear service requests success")
             }
 
-            override fun onFailure(arg0: Int) {
-                Log.e(TAG, "Clear service requests failed: " + desError(arg0))
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Clear service requests failed: ${desError(reason)}")
             }
         })
     }
@@ -186,7 +186,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
 
             override fun onFailure(reason: Int) {
                 lastError = reason
-                Log.e(TAG, "Clearing local services failed, error code $reason")
+                Log.e(TAG, "Clearing local services failed: ${desError(reason)}")
             }
         })
     }
@@ -194,11 +194,11 @@ class WifiP2PEvent(private val channel: MethodChannel,
     override fun stopAllEndpoints() {
         p2pManager?.cancelConnect(p2pChannel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
-                Log.d(TAG, "cancel connect successfull")
+                Log.d(TAG, "cancel connect successfully")
             }
 
-            override fun onFailure(arg0: Int) {
-                Log.e(TAG, "Current Connection not Terminated: " + desError(arg0))
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Current Connection not Terminated: ${desError(reason)}")
             }
         })
     }
@@ -206,16 +206,23 @@ class WifiP2PEvent(private val channel: MethodChannel,
     override fun disconnectFromEndpoint(endpointId: String) {
         p2pManager?.cancelConnect(p2pChannel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
-                Log.d(TAG, "cancel connect successfull")
+                Log.d(TAG, "cancel connect successfully")
             }
 
-            override fun onFailure(arg0: Int) {
-                Log.e(TAG, "Current Connection not Terminated: " + desError(arg0))
+            override fun onFailure(reason: Int) {
+                Log.e(TAG, "Current Connection not Terminated: ${desError(reason)}")
             }
         })
     }
 
     override fun sendPayload(endpointId: String, fromBytes: Payload) {
+    }
+
+    override fun onDispose() {
+        service.unregisterReceiver(wifiBroadcastReceiver)
+        stopAdvertising()
+        stopDiscovery()
+        stopAllEndpoints()
     }
 
     override fun onDnsSdServiceAvailable(instanceName: String?, registrationType: String?, srcDevice: WifiP2pDevice?) {
