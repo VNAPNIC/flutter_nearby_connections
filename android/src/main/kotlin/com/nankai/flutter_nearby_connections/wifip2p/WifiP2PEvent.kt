@@ -59,7 +59,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
         return intentFilter
     }
 
-  init {
+    init {
 
         p2pManager = service.getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         p2pChannel = p2pManager?.initialize(
@@ -156,7 +156,25 @@ class WifiP2PEvent(private val channel: MethodChannel,
     }
 
     override fun stopDiscovery() {
+        p2pManager?.stopPeerDiscovery(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.e(TAG, "Stop peer discovery success")
+            }
 
+            override fun onFailure(arg0: Int) {
+                Log.e(TAG, "Stop peer discovery failed: " + desError(arg0))
+            }
+        })
+
+        p2pManager?.clearServiceRequests(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.e(TAG, "Clear service requests success")
+            }
+
+            override fun onFailure(arg0: Int) {
+                Log.e(TAG, "Clear service requests failed: " + desError(arg0))
+            }
+        })
     }
 
     override fun stopAdvertising() {
@@ -173,10 +191,28 @@ class WifiP2PEvent(private val channel: MethodChannel,
         })
     }
 
-    override fun stopAllEndpoints() {}
+    override fun stopAllEndpoints() {
+        p2pManager?.cancelConnect(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.d(TAG, "cancel connect successfull")
+            }
+
+            override fun onFailure(arg0: Int) {
+                Log.e(TAG, "Current Connection not Terminated: " + desError(arg0))
+            }
+        })
+    }
 
     override fun disconnectFromEndpoint(endpointId: String) {
+        p2pManager?.cancelConnect(p2pChannel, object : WifiP2pManager.ActionListener {
+            override fun onSuccess() {
+                Log.d(TAG, "cancel connect successfull")
+            }
 
+            override fun onFailure(arg0: Int) {
+                Log.e(TAG, "Current Connection not Terminated: " + desError(arg0))
+            }
+        })
     }
 
     override fun sendPayload(endpointId: String, fromBytes: Payload) {
@@ -196,7 +232,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
             1 -> " p2p unsupported"
             2 -> "framework busy"
             3 -> "no service requests"
-                else -> "Unknown error!"
-            }
+            else -> "Unknown error!"
+        }
     }
 }
