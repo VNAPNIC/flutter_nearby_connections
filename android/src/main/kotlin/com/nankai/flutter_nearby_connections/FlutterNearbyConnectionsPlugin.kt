@@ -90,8 +90,9 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                     1 -> Strategy.P2P_STAR
                     else -> Strategy.P2P_POINT_TO_POINT
                 }
-
-                serviceType = call.argument<String>("serviceType") ?: ""
+                
+                // "_ipp._tcp"
+                serviceType = "_${call.argument<String>("serviceType") ?: "_nearby"}._tcp"
 
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
                     startForegroundService(activity, Intent(activity, NearbyService::class.java))

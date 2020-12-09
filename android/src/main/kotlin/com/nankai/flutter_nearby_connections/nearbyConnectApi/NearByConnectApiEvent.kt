@@ -106,12 +106,12 @@ class NearByConnectApiEvent(private val channel: MethodChannel,
         connectionsClient.requestConnection(displayName, endpointId, connectionLifecycleCallback)
     }
 
-    override fun stopDiscovery() {
-        connectionsClient.stopDiscovery()
-    }
-
     override fun stopAdvertising() {
         connectionsClient.stopAdvertising()
+    }
+
+    override fun stopDiscovery() {
+        connectionsClient.stopDiscovery()
     }
 
     override fun stopAllEndpoints() {

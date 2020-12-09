@@ -11,12 +11,12 @@ interface NearbyEvent {
 
     fun requestConnection(endpointId: String, displayName: String)
 
+    fun stopAdvertising()
+    
     /**
      * discovery stops after connection but we need to continue discovery
      */
     fun stopDiscovery()
-
-    fun stopAdvertising()
 
     fun stopAllEndpoints()
 
