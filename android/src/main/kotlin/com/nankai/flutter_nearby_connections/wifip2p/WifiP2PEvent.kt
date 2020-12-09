@@ -59,7 +59,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
         return intentFilter
     }
 
-    init {
+  init {
 
         p2pManager = service.getSystemService(Context.WIFI_P2P_SERVICE) as WifiP2pManager
         p2pChannel = p2pManager?.initialize(
@@ -69,7 +69,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
             Log.w(TAG, "Wifi P2P disconnected!")
         }
 
-        wifiManager = service.getSystemService(Context.WIFI_SERVICE) as WifiManager
+        wifiManager = service.applicationContext.getSystemService(Context.WIFI_SERVICE) as WifiManager
         if (wifiManager?.wifiState != WifiManager.WIFI_STATE_ENABLED) {
             wifiManager?.isWifiEnabled = true
         }
@@ -105,7 +105,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
     override fun startAdvertising(deviceName: String, serviceId: String, build: AdvertisingOptions) {
         val record: MutableMap<String, String> = HashMap()
         record["available"] = "visible"
-        val serviceMagnet = WifiP2pDnsSdServiceInfo.newInstance(deviceName, serviceType, record)
+        val serviceMagnet = WifiP2pDnsSdServiceInfo.newInstance(deviceName, "_$serviceType._tcp", record)
         p2pManager?.addLocalService(p2pChannel, serviceMagnet, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
                 lastError = -1
