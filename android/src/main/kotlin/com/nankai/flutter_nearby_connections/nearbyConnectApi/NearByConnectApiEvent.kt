@@ -20,7 +20,7 @@ class NearByConnectApiEvent(private val channel: MethodChannel,
                             private val service: NearbyService)
     : NearbyEvent {
 
-    private val TAG = "NearByConnectApiUtils"
+    private val TAG = "NearByConnectApiEvent"
 
     private var connectionsClient: ConnectionsClient = Nearby.getConnectionsClient(service)
 
@@ -95,39 +95,48 @@ class NearByConnectApiEvent(private val channel: MethodChannel,
      */
 
     override fun startAdvertising(deviceName: String, serviceId: String, build: AdvertisingOptions) {
+        Log.d(TAG, "Start advertising")
         connectionsClient.startAdvertising(deviceName, serviceId, connectionLifecycleCallback, build)
     }
 
-    override fun startDiscovery(serviceId: String, deviceName: String, build: DiscoveryOptions) {
+    override fun startDiscovery(serviceId: String, build: DiscoveryOptions) {
+        Log.d(TAG, "Start discovery")
         connectionsClient.startDiscovery(serviceId, endpointDiscoveryCallback, build)
     }
 
     override fun requestConnection(endpointId: String, displayName: String) {
+        Log.d(TAG, "Request connection")
         connectionsClient.requestConnection(displayName, endpointId, connectionLifecycleCallback)
     }
 
     override fun stopAdvertising() {
+        Log.d(TAG, "Stop advertising")
         connectionsClient.stopAdvertising()
     }
 
     override fun stopDiscovery() {
+        Log.d(TAG, "Stop discovery")
         connectionsClient.stopDiscovery()
     }
 
     override fun stopAllEndpoints() {
+        Log.d(TAG, "Stop all endpoints")
         connectionsClient.stopAllEndpoints()
     }
 
     override fun disconnectFromEndpoint(endpointId: String) {
+        Log.d(TAG, "Disconnect from endpoint")
         connectionsClient.disconnectFromEndpoint(endpointId)
         deviceManager.updateStatus(endpointId, NOT_CONNECTED)
     }
 
     override fun sendPayload(endpointId: String, fromBytes: Payload) {
+        Log.d(TAG, "Send payload")
         connectionsClient.sendPayload(endpointId, fromBytes)
     }
 
     override fun onDispose() {
+        Log.d(TAG, "Dispose")
         stopAdvertising()
         stopDiscovery()
         stopAllEndpoints()

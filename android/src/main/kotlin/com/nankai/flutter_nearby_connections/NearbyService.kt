@@ -62,22 +62,22 @@ class NearbyService : Service() , NearbyServiceEvent {
         mapping?.startAdvertising(strategy, deviceName)
     }
 
-    override fun startDiscovery(strategy: Strategy, deviceName: String) {
+    override fun startDiscovery() {
         Log.d(TAG, "startDiscovery()")
         notificationUpdate("$serviceType is running!")
-        mapping?.startDiscovery(strategy, deviceName)
+        mapping?.startDiscovery()
     }
 
-    override fun connect(endpointId: String, displayName: String) {
-        mapping?.connect(endpointId, displayName)
+    override fun stopAdvertising() {
+        mapping?.stopAdvertising()
     }
 
     override fun stopDiscovery() {
         mapping?.stopDiscovery()
     }
 
-    override fun stopAdvertising() {
-        mapping?.stopAdvertising()
+    override fun connect(endpointId: String, displayName: String) {
+        mapping?.connect(endpointId, displayName)
     }
 
     override fun disconnect(endpointId: String) {

@@ -26,8 +26,12 @@ class EventMapping(private val service: NearbyService) : NearbyServiceEvent {
     private val gson = Gson()
     private lateinit var deviceManager: DeviceManager
 
-    private var state = BluetoothAdapter.STATE_OFF
+    private var newBluetoothState = -1
     private var bluetoothExist = false
+    private var firstStart = true
+    private var isStartAdvertising = false
+    private var strategy: Strategy? = null
+    private var deviceName: String? = null
 
     private lateinit var nearByConnectApiEvent: NearByConnectApiEvent
     private lateinit var wifiP2PEvent: WifiP2PEvent
@@ -37,27 +41,65 @@ class EventMapping(private val service: NearbyService) : NearbyServiceEvent {
             val action = intent.action
 
             if (action == BluetoothAdapter.ACTION_STATE_CHANGED) {
-                val state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
+                newBluetoothState = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE,
                         BluetoothAdapter.ERROR)
-                when (state) {
-                    BluetoothAdapter.STATE_OFF -> Log.i(TAG, "Bluetooth off")
+                when (newBluetoothState) {
                     BluetoothAdapter.STATE_TURNING_OFF -> Log.i(TAG, "Turning Bluetooth off...")
-                    BluetoothAdapter.STATE_ON -> Log.i(TAG, "Bluetooth on")
+                    BluetoothAdapter.STATE_OFF -> {
+                        Log.i(TAG, "Bluetooth off")
+                        restartWifiP2p()
+                    }
                     BluetoothAdapter.STATE_TURNING_ON -> Log.i(TAG, "Turning Bluetooth on...")
+                    BluetoothAdapter.STATE_ON -> {
+                        Log.i(TAG, "Bluetooth on")
+                        restartNearbyConnection()
+                    }
                 }
             }
         }
     }
 
-    private fun logBluetooth() {
-        Log.i(TAG, when (state) {
-            BluetoothAdapter.STATE_OFF -> "Bluetooth off"
-            BluetoothAdapter.STATE_TURNING_OFF -> "Turning Bluetooth off..."
-            BluetoothAdapter.STATE_ON -> "Bluetooth on"
-            BluetoothAdapter.STATE_TURNING_ON -> "Turning Bluetooth on..."
-            else -> "Bluetooth off"
-        })
+    private fun restartWifiP2p() {
+        bluetoothLog()
+
+        wifiP2PEvent.unregisterReceiver()
+        if (isStartAdvertising) {
+            if (strategy != null && deviceName != null) {
+                stopAdvertising(isWifiP2p = true)
+                restartAdvertising(isWifiP2p = true)
+            }
+        }
+
+        stopDiscovery(isWifiP2p = true)
+        stopAllEndpoints(isWifiP2p = true)
+        startDiscovery(isWifiP2p = true)
     }
+
+    private fun restartNearbyConnection() {
+        bluetoothLog()
+
+        wifiP2PEvent.unregisterReceiver()
+        if (isStartAdvertising) {
+            if (strategy != null && deviceName != null) {
+                stopAdvertising(isWifiP2p = false)
+                restartAdvertising(isWifiP2p = false)
+            }
+        }
+
+        stopDiscovery(isWifiP2p = false)
+        stopAllEndpoints(isWifiP2p = false)
+        startDiscovery(isWifiP2p = false)
+    }
+
+
+    private fun bluetoothLog() {
+        Log.i(TAG, "\n【Reset connect with info】" +
+                "\nNew bluetooth state: $newBluetoothState" +
+                "\nBluetooth exist: $bluetoothExist" +
+                "\nStrategy: $strategy" +
+                "\nDevice name: $deviceName")
+    }
+
 
     override fun onCreate() {
         val filter = IntentFilter(BluetoothAdapter.ACTION_STATE_CHANGED)
@@ -87,40 +129,56 @@ class EventMapping(private val service: NearbyService) : NearbyServiceEvent {
     override fun onDestroy() {
         service.unregisterReceiver(bluetoothChangeReceiver)
         wifiP2PEvent.onDispose()
+        nearByConnectApiEvent.onDispose()
     }
 
     override fun startAdvertising(strategy: Strategy, deviceName: String) {
-        wifiP2PEvent.startAdvertising(
-                deviceName,
-                SERVICE_ID,
-                AdvertisingOptions.Builder().setStrategy(strategy).build())
+        this.strategy = strategy
+        this.deviceName = deviceName
+
+        if (!bluetoothExist) {
+            restartAdvertising(isWifiP2p = true)
+        }
     }
 
-    override fun startDiscovery(strategy: Strategy, deviceName: String) {
-        wifiP2PEvent.startDiscovery(
-                SERVICE_ID,
-                deviceName,
-                DiscoveryOptions.Builder().setStrategy(strategy).build())
-    }
-
-    override fun connect(endpointId: String, displayName: String) {
-        wifiP2PEvent.requestConnection(endpointId, displayName)
-    }
-
-    override fun stopDiscovery() {
-        wifiP2PEvent.stopDiscovery()
+    override fun startDiscovery() {
+        if (bluetoothExist) {
+            setBluetooth(true)
+        } else {
+            startDiscovery(isWifiP2p = true)
+        }
     }
 
     override fun stopAdvertising() {
-        wifiP2PEvent.stopAdvertising()
+        stopAdvertising(isWifiP2p = !bluetoothEnable())
+    }
+
+    override fun stopDiscovery() {
+        stopAdvertising(isWifiP2p = !bluetoothEnable())
+    }
+
+    override fun connect(endpointId: String, displayName: String) {
+        if (bluetoothEnable()) {
+            nearByConnectApiEvent.requestConnection(endpointId, displayName)
+        } else {
+            wifiP2PEvent.requestConnection(endpointId, displayName)
+        }
     }
 
     override fun disconnect(endpointId: String) {
-        wifiP2PEvent.disconnectFromEndpoint(endpointId)
+        if (bluetoothEnable()) {
+            nearByConnectApiEvent.disconnectFromEndpoint(endpointId)
+        } else {
+            wifiP2PEvent.disconnectFromEndpoint(endpointId)
+        }
     }
 
     override fun sendStringPayload(endpointId: String, str: String) {
-        wifiP2PEvent.sendPayload(endpointId, Payload.fromBytes(str.toByteArray()))
+        if (bluetoothEnable()) {
+            nearByConnectApiEvent.sendPayload(endpointId, Payload.fromBytes(str.toByteArray()))
+        } else {
+            wifiP2PEvent.sendPayload(endpointId, Payload.fromBytes(str.toByteArray()))
+        }
     }
 
     private fun setBluetooth(enable: Boolean): Boolean {
@@ -135,4 +193,55 @@ class EventMapping(private val service: NearbyService) : NearbyServiceEvent {
         return true
     }
 
+    private fun bluetoothEnable(): Boolean = newBluetoothState == BluetoothAdapter.STATE_ON && bluetoothExist
+
+    private fun stopAdvertising(isWifiP2p: Boolean) {
+        if (isWifiP2p) {
+            nearByConnectApiEvent.stopAllEndpoints()
+        } else {
+            wifiP2PEvent.stopAllEndpoints()
+        }
+    }
+
+    private fun stopDiscovery(isWifiP2p: Boolean) {
+        if (isWifiP2p) {
+            nearByConnectApiEvent.stopAllEndpoints()
+        } else {
+            wifiP2PEvent.stopAllEndpoints()
+        }
+    }
+
+    private fun stopAllEndpoints(isWifiP2p: Boolean) {
+        if (isWifiP2p) {
+            nearByConnectApiEvent.stopAllEndpoints()
+        } else {
+            wifiP2PEvent.stopAllEndpoints()
+        }
+    }
+
+    private fun startDiscovery(isWifiP2p: Boolean) {
+        if (isWifiP2p) {
+            wifiP2PEvent.startDiscovery(
+                    SERVICE_ID,
+                    DiscoveryOptions.Builder().setStrategy(strategy).build())
+        } else {
+            nearByConnectApiEvent.startDiscovery(
+                    SERVICE_ID,
+                    DiscoveryOptions.Builder().setStrategy(strategy).build())
+        }
+    }
+
+    private fun restartAdvertising(isWifiP2p: Boolean) {
+        if (isWifiP2p) {
+            wifiP2PEvent.startAdvertising(
+                    deviceName!!,
+                    SERVICE_ID,
+                    AdvertisingOptions.Builder().setStrategy(strategy).build())
+        } else {
+            nearByConnectApiEvent.startAdvertising(
+                    deviceName!!,
+                    SERVICE_ID,
+                    AdvertisingOptions.Builder().setStrategy(strategy).build())
+        }
+    }
 }

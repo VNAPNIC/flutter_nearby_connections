@@ -92,7 +92,6 @@ class WifiP2PEvent(private val channel: MethodChannel,
         }
 
         wifiBroadcastReceiver = WifiBroadcastReceiver(p2pManager, p2pChannel, this@WifiP2PEvent)
-        service.registerReceiver(wifiBroadcastReceiver, setupIntentFilters())
 
         // Wi-Fi Direct Auto Accept authentication (Only PBC supported)
         val wdAutoAccept = WifiDirectAutoAccept(p2pManager, p2pChannel)
@@ -101,6 +100,13 @@ class WifiP2PEvent(private val channel: MethodChannel,
         // Configure the Intention and WPS in wifi P2P
         p2pConfig.groupOwnerIntent = 8 + r.nextInt(6)
         p2pConfig.wps.setup = WpsInfo.PBC
+    }
+
+    fun unregisterReceiver() {
+        try {
+            service.unregisterReceiver(wifiBroadcastReceiver)
+        } catch (e: Exception) {
+        }
     }
 
     /**
@@ -125,7 +131,9 @@ class WifiP2PEvent(private val channel: MethodChannel,
         })
     }
 
-    override fun startDiscovery(serviceId: String, deviceName: String, build: DiscoveryOptions) {
+    override fun startDiscovery(serviceId: String, build: DiscoveryOptions) {
+        service.registerReceiver(wifiBroadcastReceiver, setupIntentFilters())
+
         /*
          * Register listeners for DNS-SD services. These are callbacks invoked
 		 * by the system when a service is actually discovered.
@@ -229,7 +237,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
                     override fun onSuccess() {
                         Log.i(TAG, "Group removed successfully")
                         restartServiceDiscovery()
-                        if(group.isGroupOwner){
+                        if (group.isGroupOwner) {
                             crateGroup()
                         }
                     }
@@ -246,7 +254,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
     }
 
     override fun onDispose() {
-        service.unregisterReceiver(wifiBroadcastReceiver)
+        unregisterReceiver()
         stopAdvertising()
         stopDiscovery()
         stopAllEndpoints()
@@ -271,7 +279,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
 
     }
 
-    private fun restartServiceDiscovery(){
+    private fun restartServiceDiscovery() {
         p2pManager?.stopPeerDiscovery(p2pChannel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
                 Log.i(TAG, "Stop peer discovery success")
@@ -301,7 +309,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
         })
     }
 
-    private fun disconnect(){
+    private fun disconnect() {
         p2pManager?.requestGroupInfo(p2pChannel) { group ->
             if (group != null) {
                 p2pManager?.removeGroup(p2pChannel, object : WifiP2pManager.ActionListener {
@@ -317,7 +325,7 @@ class WifiP2PEvent(private val channel: MethodChannel,
         }
     }
 
-    private fun crateGroup(){
+    private fun crateGroup() {
         p2pManager?.createGroup(p2pChannel, object : WifiP2pManager.ActionListener {
             override fun onSuccess() {
                 Log.i(TAG, "Group created successfully")

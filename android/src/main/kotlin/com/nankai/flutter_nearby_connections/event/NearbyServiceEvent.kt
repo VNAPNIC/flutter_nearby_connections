@@ -12,13 +12,13 @@ interface NearbyServiceEvent {
 
     fun startAdvertising(strategy: Strategy, deviceName: String)
 
-    fun startDiscovery(strategy: Strategy, deviceName: String)
+    fun startDiscovery()
 
-    fun connect(endpointId: String, displayName: String)
+    fun stopAdvertising()
 
     fun stopDiscovery()
 
-    fun stopAdvertising()
+    fun connect(endpointId: String, displayName: String)
 
     fun disconnect(endpointId: String)
 

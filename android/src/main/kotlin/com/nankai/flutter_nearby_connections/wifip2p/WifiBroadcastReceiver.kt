@@ -12,8 +12,8 @@ import android.util.Log
 
 class WifiBroadcastReceiver(private val p2pManager: WifiP2pManager?,
                             private val channel: WifiP2pManager.Channel?,
-                            private val wifiP2PEvent: WifiP2PEvent) : BroadcastReceiver(),
-        WifiP2pManager.ConnectionInfoListener {
+                            private val wifiP2PEvent: WifiP2PEvent) :
+        BroadcastReceiver(), WifiP2pManager.ConnectionInfoListener {
 
     private val TAG = "WifiBroadcastReceiver"
 

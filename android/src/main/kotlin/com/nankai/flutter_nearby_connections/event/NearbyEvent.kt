@@ -7,7 +7,7 @@ import com.google.android.gms.nearby.connection.Payload
 interface NearbyEvent {
     fun startAdvertising(deviceName: String, serviceId: String, build: AdvertisingOptions)
 
-    fun startDiscovery(serviceId: String, deviceName: String, build: DiscoveryOptions)
+    fun startDiscovery(serviceId: String, build: DiscoveryOptions)
 
     fun requestConnection(endpointId: String, displayName: String)
 
