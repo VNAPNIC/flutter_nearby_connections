@@ -2,6 +2,8 @@ library flutter_nearby_connections;
 
 import 'dart:async';
 import 'dart:convert';
+import 'dart:core';
+
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';

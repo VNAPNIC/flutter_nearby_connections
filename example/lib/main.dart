@@ -1,11 +1,10 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:device_info/device_info.dart';
+import 'package:flutter_styled_toast/flutter_styled_toast.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_nearby_connections/flutter_nearby_connections.dart';
-import 'package:fluttertoast/fluttertoast.dart';
 
 void main() {
   runApp(MyApp());
@@ -85,7 +84,7 @@ class Home extends StatelessWidget {
 enum DeviceType { advertiser, browser }
 
 class DevicesListScreen extends StatefulWidget {
-  const DevicesListScreen({this.deviceType});
+  const DevicesListScreen({required this.deviceType});
 
   final DeviceType deviceType;
 
@@ -96,9 +95,9 @@ class DevicesListScreen extends StatefulWidget {
 class _DevicesListScreenState extends State<DevicesListScreen> {
   List<Device> devices = [];
   List<Device> connectedDevices = [];
-  NearbyService nearbyService;
-  StreamSubscription subscription;
-  StreamSubscription receivedDataSubscription;
+  late NearbyService nearbyService;
+  late StreamSubscription subscription;
+  late StreamSubscription receivedDataSubscription;
 
   bool isInit = false;
 
@@ -110,8 +109,8 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
 
   @override
   void dispose() {
-    subscription?.cancel();
-    receivedDataSubscription?.cancel();
+    subscription.cancel();
+    receivedDataSubscription.cancel();
     nearbyService.stopBrowsingForPeers();
     nearbyService.stopAdvertisingPeer();
     super.dispose();
@@ -237,13 +236,13 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
               title: Text("Send message"),
               content: TextField(controller: myController),
               actions: [
-                FlatButton(
+                TextButton(
                   child: Text("Cancel"),
                   onPressed: () {
                     Navigator.of(context).pop();
                   },
                 ),
-                FlatButton(
+                TextButton(
                   child: Text("Send"),
                   onPressed: () {
                     nearbyService.sendMessage(
@@ -283,8 +282,19 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
 
   void init() async {
     nearbyService = NearbyService();
+    String devInfo = '';
+    DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
+    if (Platform.isAndroid) {
+      AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
+      devInfo = androidInfo.model;
+    }
+    if (Platform.isIOS) {
+      IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
+      devInfo = iosInfo.localizedModel;
+    }
     await nearbyService.init(
-        serviceType: 'mp-connection',
+        serviceType: 'mpconn',
+        deviceName: devInfo,
         strategy: Strategy.P2P_CLUSTER,
         callback: (isRunning) async {
           if (isRunning) {
@@ -302,7 +312,7 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         });
     subscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
-      devicesList?.forEach((element) {
+      devicesList.forEach((element) {
         print(
             " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
 
@@ -328,7 +338,11 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
     receivedDataSubscription =
         nearbyService.dataReceivedSubscription(callback: (data) {
       print("dataReceivedSubscription: ${jsonEncode(data)}");
-      Fluttertoast.showToast(msg: jsonEncode(data));
+      showToast(jsonEncode(data),
+          context: context,
+          axis: Axis.horizontal,
+          alignment: Alignment.center,
+          position: StyledToastPosition.bottom);
     });
   }
 }
