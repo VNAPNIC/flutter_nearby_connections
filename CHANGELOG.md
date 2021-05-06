@@ -1,3 +1,7 @@
+## 1.0.11
+
+* Support Null Safety
+
 ## 1.0.10
 
 * refactor readme and code
