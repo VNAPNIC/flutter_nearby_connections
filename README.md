@@ -12,9 +12,7 @@ The project is based on
 
 [Nearby Connections API](https://developers.google.com/nearby/connections/overview) (Bluetooth & hotspot) Support [Strategy](https://pub.dev/documentation/flutter_nearby_connections/latest/flutter_nearby_connections/Strategy-class.html): ***Strategy.P2P_CLUSTER***, ***Strategy.P2P_STAR***, ***Strategy.P2P_POINT_TO_POINT***
 
-[Wi-Fi P2P](https://developer.android.com/guide/topics/connectivity/wifip2p) (only wifi) Support [Strategy](https://pub.dev/documentation/flutter_nearby_connections/latest/flutter_nearby_connections/Strategy-class.html): ***Strategy.Wi_Fi_P2P***
-
-If doesn't find the Bluetooth then auto scan with the Wifi, only use wifi you can define in the ***Strategy.Wi_Fi_P2P***
+[Wi-Fi P2P](https://developer.android.com/guide/topics/connectivity/wifip2p) (only wifi hotspot no internet) Support [Strategy](https://pub.dev/documentation/flutter_nearby_connections/latest/flutter_nearby_connections/Strategy-class.html): ***Strategy.Wi_Fi_P2P***
 
 #### IOS
 
