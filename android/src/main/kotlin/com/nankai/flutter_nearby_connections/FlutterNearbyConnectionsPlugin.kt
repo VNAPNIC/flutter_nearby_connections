@@ -1,17 +1,15 @@
 package com.nankai.flutter_nearby_connections
 
 import android.app.Activity
-import android.content.ComponentName
-import android.content.Context
-import android.content.Intent
-import android.content.ServiceConnection
+import android.content.*
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
 import androidx.annotation.NonNull
 import androidx.core.content.ContextCompat.startForegroundService
 import com.google.android.gms.nearby.Nearby
-import com.google.android.gms.nearby.connection.*
+import com.google.android.gms.nearby.connection.ConnectionsClient
+import com.google.android.gms.nearby.connection.Strategy
 import io.flutter.embedding.engine.plugins.FlutterPlugin
 import io.flutter.embedding.engine.plugins.activity.ActivityAware
 import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding
@@ -20,6 +18,7 @@ import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler
 import io.flutter.plugin.common.MethodChannel.Result
 import io.flutter.plugin.common.PluginRegistry.Registrar
+import java.lang.Exception
 import kotlin.system.exitProcess
 
 
@@ -49,12 +48,12 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     private lateinit var activity: Activity
     private var binding: ActivityPluginBinding? = null
     private lateinit var callbackUtils: CallbackUtils
-    private var mService: NearbyService? = null
 
     private lateinit var localDeviceName: String
     private lateinit var strategy: Strategy
     private lateinit var connectionsClient: ConnectionsClient
-    private var mBound = false
+    private lateinit var serviceBindManager: ServiceBindManager
+    private var isBind = false
 
     override fun onAttachedToEngine(@NonNull flutterPluginBinding: FlutterPlugin.FlutterPluginBinding) {
         channel = MethodChannel(flutterPluginBinding.flutterEngine.dartExecutor, viewTypeId)
@@ -74,15 +73,11 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
     override fun onMethodCall(@NonNull call: MethodCall, @NonNull result: Result) {
         when (call.method) {
             initNearbyService -> {
-                connectionsClient = Nearby.getConnectionsClient(activity)
+                Log.d("nearby_connections", "initNearbyService")
                 callbackUtils = CallbackUtils(channel, activity)
-
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-                    startForegroundService(activity, Intent(activity, NearbyService::class.java))
-                }
-
-                val intent = Intent(activity, NearbyService::class.java)
-                activity.bindService(intent, connection, Context.BIND_AUTO_CREATE)
+                connectionsClient = Nearby.getConnectionsClient(activity)
+                serviceBindManager = ServiceBindManager(activity, channel, callbackUtils)
+                serviceBindManager.bindService()
 
                 localDeviceName = if (call.argument<String>("deviceName").isNullOrEmpty())
                     Build.MANUFACTURER + " " + Build.MODEL
@@ -99,32 +94,34 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
             }
             startAdvertisingPeer -> {
                 Log.d("nearby_connections", "startAdvertisingPeer")
-                mService?.startAdvertising(strategy, localDeviceName)
+                serviceBindManager.mService?.startAdvertising(strategy, localDeviceName)
             }
             startBrowsingForPeers -> {
                 Log.d("nearby_connections", "startBrowsingForPeers")
-                mService?.startDiscovery(strategy)
+                serviceBindManager.mService?.startDiscovery(strategy)
             }
             stopAdvertisingPeer -> {
                 Log.d("nearby_connections", "stopAdvertisingPeer")
-                mService?.stopAdvertising()
+                serviceBindManager.mService?.stopAdvertising()
+                serviceBindManager.unbindService()
                 result.success(true)
             }
             stopBrowsingForPeers -> {
                 Log.d("nearby_connections", "stopDiscovery")
-                mService?.stopDiscovery()
+                serviceBindManager.mService?.stopDiscovery()
+                serviceBindManager.unbindService()
                 result.success(true)
             }
             invitePeer -> {
                 Log.d("nearby_connections", "invitePeer")
                 val deviceId = call.argument<String>("deviceId")
                 val displayName = call.argument<String>("deviceName")
-                mService?.connect(deviceId!!, displayName!!)
+                serviceBindManager.mService?.connect(deviceId!!, displayName!!)
             }
             disconnectPeer -> {
                 Log.d("nearby_connections", "disconnectPeer")
                 val deviceId = call.argument<String>("deviceId")
-                mService?.disconnect(deviceId!!)
+                serviceBindManager.mService?.disconnect(deviceId!!)
                 callbackUtils.updateStatus(deviceId = deviceId!!, state = notConnected)
                 result.success(true)
             }
@@ -132,29 +129,16 @@ class FlutterNearbyConnectionsPlugin : FlutterPlugin, MethodCallHandler, Activit
                 Log.d("nearby_connections", "sendMessage")
                 val deviceId = call.argument<String>("deviceId")
                 val message = call.argument<String>("message")
-                mService?.sendStringPayload(deviceId!!, message!!)
+                serviceBindManager.mService?.sendStringPayload(deviceId!!, message!!)
             }
-        }
-    }
-
-    private val connection: ServiceConnection = object : ServiceConnection {
-        override fun onServiceConnected(className: ComponentName, service: IBinder) {
-            val binder = service as LocalBinder
-            mService = binder.service
-            mService?.initService(callbackUtils)
-            mBound = true
-            channel.invokeMethod(NEARBY_RUNNING, mBound)
-        }
-
-        override fun onServiceDisconnected(arg0: ComponentName) {
-            mBound = false
-            channel.invokeMethod(NEARBY_RUNNING, mBound)
         }
     }
 
     override fun onDetachedFromEngine(@NonNull binding: FlutterPlugin.FlutterPluginBinding) {
         channel.setMethodCallHandler(null)
-        mService?.onDestroy()
+        serviceBindManager.mService?.stopAdvertising()
+        serviceBindManager.mService?.stopDiscovery()
+        serviceBindManager.unbindService()
         locationHelper = null
         exitProcess(0)
     }

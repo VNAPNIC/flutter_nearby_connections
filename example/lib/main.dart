@@ -299,13 +299,15 @@ class _DevicesListScreenState extends State<DevicesListScreen> {
         callback: (isRunning) async {
           if (isRunning) {
             if (widget.deviceType == DeviceType.browser) {
+
               await nearbyService.stopBrowsingForPeers();
+              await Future.delayed(Duration(microseconds: 200));
               await nearbyService.startBrowsingForPeers();
             } else {
               await nearbyService.stopAdvertisingPeer();
-              await nearbyService.startAdvertisingPeer();
-
               await nearbyService.stopBrowsingForPeers();
+              await Future.delayed(Duration(microseconds: 200));
+              await nearbyService.startAdvertisingPeer();
               await nearbyService.startBrowsingForPeers();
             }
           }
