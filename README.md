@@ -55,3 +55,7 @@ nearbyService.init(
 
 ![The example app running in IOS](https://github.com/VNAPNIC/flutter_nearby_connections/blob/master/screen.gif?raw=true)
 
+#### Test on Android device
+
+![The example app running in Android](https://github.com/VNAPNIC/flutter_nearby_connections/blob/master/android-screen.gif?raw=true)
+
