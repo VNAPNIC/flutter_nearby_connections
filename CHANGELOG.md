@@ -1,3 +1,7 @@
+## 1.1.0
+
+* Fix android devices are not able to see each other.
+
 ## 1.0.11
 
 * Support Null Safety
