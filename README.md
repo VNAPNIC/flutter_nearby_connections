@@ -59,4 +59,5 @@ nearbyService.init(
 
 ![The example app running in Android](https://github.com/VNAPNIC/flutter_nearby_connections/blob/master/android-screen.gif?raw=true)
 
-https://profile-counter.glitch.me/vnapnic/count.svg
+## Visitors Count
+<img height="30px" src = "https://profile-counter.glitch.me/vnapnic/count.svg" alt ="Loading">
