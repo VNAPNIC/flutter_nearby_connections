@@ -32,6 +32,7 @@ class NearbyService {
   final _dataReceivedController = StreamController<dynamic>.broadcast();
 
   Stream<dynamic> get _dataReceivedStream => _dataReceivedController.stream;
+  String? _deviceName;
 
   /// The class [NearbyService] supports the discovery of services provided by
   /// nearby devices and supports communicating with those services through
@@ -52,6 +53,7 @@ class NearbyService {
       required Strategy strategy,
       String? deviceName,
       required Function callback}) async {
+    _deviceName = deviceName;
     assert(serviceType.length <= 15 &&
         //serviceType != null &&
         serviceType.isNotEmpty);
@@ -159,6 +161,7 @@ class NearbyService {
   FutureOr<dynamic> sendMessage(String deviceID, String message) async {
     await _channel.invokeMethod(_sendMessage, <String, dynamic>{
       'deviceId': deviceID,
+      if (_deviceName != null) 'senderDeviceId': _deviceName,
       'message': message,
     });
   }
