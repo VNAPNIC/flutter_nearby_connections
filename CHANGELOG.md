@@ -1,3 +1,7 @@
+## 1.1.2
+* Project in compileSdkVersion 34
+* Add senderDeviceId to send dictionary
+
 ## 1.1.1
 
 * Update readme - test on the real Android device.
