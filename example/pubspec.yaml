@@ -18,7 +18,7 @@ dependencies:
     path: ../
 
   cupertino_icons: ^1.0.2
-  device_info: ^2.0.0
+  device_info_plus: ^9.1.1
   flutter_udid: ^2.0.0
 
 dev_dependencies:
