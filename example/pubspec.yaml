@@ -6,7 +6,7 @@ description: Demonstrates how to use the flutter_nearby_connections plugin.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
 
 environment:
-  sdk: '>=2.12.0 <3.0.0'
+  sdk: '>=3.2.3 <4.0.0'
 
 dependencies:
   flutter:
@@ -18,7 +18,7 @@ dependencies:
     path: ../
 
   cupertino_icons: ^1.0.2
-  device_info: ^2.0.0
+  device_info_plus: ^9.1.1
   flutter_udid: ^2.0.0
 
 dev_dependencies:
