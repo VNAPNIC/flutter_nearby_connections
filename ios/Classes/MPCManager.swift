@@ -167,6 +167,9 @@ extension MPCManager: MCNearbyServiceBrowserDelegate {
     func browser(_ browser: MCNearbyServiceBrowser, foundPeer peerID: MCPeerID, withDiscoveryInfo info: [String : String]?) {
         // found peer, create a device with this peerID
         addNewDevice(for: peerID)
+        
+        // Inform about changed device state via NotificationCenter to guarantee main thread execution.
+        NotificationCenter.default.post(name: MPCManager.Notifications.deviceDidChangeState, object: nil)
     }
     
     func browser(_ browser: MCNearbyServiceBrowser, lostPeer peerID: MCPeerID) {
