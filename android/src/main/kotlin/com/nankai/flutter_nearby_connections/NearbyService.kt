@@ -92,10 +92,12 @@ class NearbyService : Service() {
     }
 
     override fun onDestroy() {
+        if (this::connectionsClient.isInitialized) {
+            stopAdvertising()
+            stopDiscovery()
+            connectionsClient.stopAllEndpoints()
+        }
         super.onDestroy()
-        stopAdvertising()
-        stopDiscovery()
-        connectionsClient.stopAllEndpoints()
     }
 
     private fun getNotification(): Notification? {
